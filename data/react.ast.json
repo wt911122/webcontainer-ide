@@ -1,0 +1,47 @@
+{
+    "concept": "View",
+    "elements": [
+        {
+            "concept": "ViewElement",
+            "tag": "Flex",
+            "bindAttrs": [
+                {
+                    "concept": "BindAttribute",
+                    "name": "gap",
+                    "value": "middle"
+                }
+            ],
+            "children": [
+                {
+                    "concept": "ViewElement",
+                    "tag": "Button",
+                    "innerText": "button1"
+                },
+                {
+                    "concept": "ViewElement",
+                    "tag": "Button",
+                    "innerText": "button2",
+                    "bindAttrs": [
+                        {
+                            "concept": "BindAttribute",
+                            "name": "type",
+                            "value": "primary"
+                        }
+                    ]
+                },
+                {
+                    "concept": "ViewElement",
+                    "tag": "Button",
+                    "innerText": "button3",
+                    "bindAttrs": [
+                        {
+                            "concept": "BindAttribute",
+                            "name": "type",
+                            "value": "link"
+                        }
+                    ]
+                }
+            ]
+        }
+    ]
+}

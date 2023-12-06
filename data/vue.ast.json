@@ -1,0 +1,23 @@
+{
+    "concept": "View",
+    "elements": [
+        {
+            "concept": "ViewElement",
+            "tag": "u-linear-layout",
+            "children": [
+                {
+                    "concept": "ViewElement",
+                    "tag": "u-button",
+                    "innerText": "button1",
+                    "bindAttrs": [
+                        {
+                            "concept": "BindAttribute",
+                            "name": "text",
+                            "value": "Button1"
+                        }
+                    ]
+                }
+            ]
+        }
+    ]
+}

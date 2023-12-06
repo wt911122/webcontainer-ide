@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <style>
+            zoom-pan-box { 
+                display: block;
+                width: 800px;
+                height: 600px;
+                overflow: auto;
+                border: 1px solid black;
+            }
+        </style>
+        <script src="./zoompan-box2.js"></script>
+    </head>
+    <body>
+        
+        <zoom-pan-box zoom="1"
+            device-width="1440"
+            device-height="auto"
+            content-margin-top="20"
+            content-margin-left="20"
+            content-margin-bottom="20"
+            content-margin-right="20">
+            <!-- <img src="http://placekitten.com/1280/720" /> -->
+            <iframe style="width: 100%;height: 800px;" allowTransparency="true" src="https://projectmanage.netease-official.lcap.163yun.com/dashboard/FeatureList"></iframe>
+        </zoom-pan-box>
+        Use the shift key:
+    </body>
+</html>

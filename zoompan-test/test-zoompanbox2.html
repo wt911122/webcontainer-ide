@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <style>
+            #viewport { 
+                display: block;
+                width: 800px;
+                height: 600px;
+                overflow: auto; 
+                cursor: grab; 
+                border: 1px solid black;
+            }
+            #viewcontent {
+                position: relative;
+                width: 1440px;
+                height: 800px;
+                box-sizing: border-box;
+                border: 1px solid blue;
+            }
+            #innerview{
+                position: absolute; 
+                transform-origin: 0px 0px;
+                left: 0;
+                top: 0;
+                width: 100%;
+            }
+            #frameWrapper{
+                width: 100%;
+                height: 100%;
+                position: absolute; 
+                transform-origin: 0px 0px;
+            }
+            iframe {
+                border: none;
+                min-width: 100%; /* 避免宽度被限制 */
+                height: 100%;
+                background: #ebebeb;
+            }
+        </style>
+        <script src="./zoompan-box.js"></script>
+    </head>
+    <body>
+        <div id="viewport">
+            <div id="viewcontent">
+                <div id="innerview">
+                    <div id="frameWrapper">
+                        <iframe id="iframe" src="https://projectmanage.netease-official.lcap.163yun.com/dashboard/PersonalWorkstation"></iframe>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <script>
+            const pixel = (val) => `${val}px`;
+            const dom = {
+                viewport: document.querySelector("#viewport"),
+                viewcontent: document.querySelector("#viewcontent"),
+                innerview: document.querySelector('#innerview'),
+                frameWrapper: document.querySelector('#frameWrapper'),
+                iframe: document.querySelector('#iframe')
+            }
+
+            
+
+            let zoom = 1.0;
+
+            const viewport = {
+                width: undefined,
+                height: undefined,
+                scrollX: undefined,
+                scrollY: undefined,
+            }
+            const content = {
+                width: 1440,
+                height: window.innerHeight
+            }
+
+            const meta = {
+                zoom: 1.0,
+                tx: 0,
+                ty: 0,
+            }
+            
+            function init() {
+                viewport.width = dom.viewport.clientWidth;
+                viewport.height = dom.viewport.clientHeight;
+                viewport.scrollX = 0;
+                viewport.scrollY = 0;
+
+                content.width = 1440;
+                content.height = window.innerHeight;
+            }
+            
+            const SCROLL_WIDTH = 20;
+            function fit() {
+                const wheelBoxWidth = dom.viewport.clientWidth - SCROLL_WIDTH;
+                const wheelBoxHeight = dom.viewport.clientHeight - SCROLL_WIDTH;
+                const fitSize = wheelBoxWidth / content.width;
+
+                meta.zoom = fitSize;
+            }
+
+            function setStyle() {
+                dom.viewcontent.style.width = pixel(content.width);
+                dom.viewcontent.style.height = pixel(content.height);
+                dom.innerview.style.transform = `translate(${meta.tx}px, ${meta.ty}px)`;
+                dom.frameWrapper.style.transform = `scale(${meta.zoom})`;
+            }
+
+            function computeTranslate(point, zoomnew){
+                const factor = zoomnew * (1 + zoomnew/meta.zoom);
+                meta.tx = point[0] * factor + meta.tx;
+                meta.ty = point[1] * factor + meta.ty;
+            }
+
+
+            init();
+            fit();
+            setStyle();
+
+
+
+
+
+
+            // function resolveCurrentOffset(clientX, clientY) {
+            //     const rect = dom.viewport.getBoundingClientRect()
+            //     return [clientX - rect.x, clientY - rect.y];
+            // }
+            
+            // function onWheel(e){
+            //     if(e.ctrlKey) {
+            //         e.preventDefault();
+            //         const point = resolveCurrentOffset(e.clientX, e.clientY);
+            //         zoomAtPoint(point, -e.deltaY / 1000);
+            //     }
+            // }
+
+            // function zoomAtPoint(point, val) {
+            //     const [x, y] = point;
+            //     const oldzoom = zoom
+            //     const viewport = dom.viewport;
+            //     const viewcontent = dom.viewcontent;
+            //     const innerview = dom.innerview;
+
+            //     // compute translation
+
+            //     // adjust content box
+
+            //     const newzoom = Math.min(Math.max(parseFloat(oldzoom + val), 0.5), 2);
+            //     let w = contentInitWidth * newzoom;
+            //     let h = contentInitHeight * newzoom;
+
+            //     if(w < viewportWidth) {
+
+            //     }
+               
+            //     const { scrollLeft, scrollTop } = viewport;
+            //     innerview.style.transform = `scale(${newzoom}, ${newzoom})`;
+                
+            //     const px = (scrollLeft + x)/oldzoom
+            //     const sx = px*newzoom - x;
+            //     const py = (scrollTop + y)/oldzoom 
+            //     const sy = py*newzoom - y;
+
+            //     // if(sx > 0) {
+            //     //     w = contentInitWidth * newzoom;
+            //     // } else {
+            //     //     w = viewcontent;
+            //     // }
+
+            //     viewcontent.style.width = pixel(w);
+            //     viewcontent.style.height = pixel(h);
+            //     viewport.scrollTo(sx, sy);
+            //     zoom = newzoom;
+            //     console.log(w, h, sx)
+            // }
+
+            // dom.viewport.addEventListener("wheel", onWheel);
+            // viewcontent.style.width = pixel(viewportWidth);
+            // viewcontent.style.height = pixel(viewportHeight);
+            // innerview.style.width = pixel(viewportWidth);
+            // innerview.style.height = pixel(viewportHeight);
+
+        </script>
+    </body>
+</html>

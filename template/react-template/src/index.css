@@ -1,0 +1,37 @@
+body {
+    margin: 0;
+    place-items: center;
+    min-width: 320px;
+    min-height: 300px;
+}
+button {
+    cursor: inherit !important;
+}
+[ide-dragging='true'] {
+    opacity: 0.5!important;
+}
+
+[dropgap='true'] {
+    padding: 10px;
+    border: 1px dashed #4a88e8;
+    transition: padding 0.2s;
+    box-sizing: border-box; /** 避免宽度撑开，超出 */
+}
+/* 子页面容器禁用 dropgap，bugid 2693320101095168 */
+[dropgap='true'][vusion-node-tag*="-router-view"] {
+    border: none;
+    padding: 0;
+}
+
+body[ide-cursor="copy"] {
+    cursor: copy!important;
+}
+body[ide-cursor="auto"] {
+    cursor: auto;
+}
+body[ide-cursor="grabbing"] {
+    cursor: grabbing!important;
+}
+body[ide-cursor="not-allowed"] {
+    cursor: not-allowed!important;
+}

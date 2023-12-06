@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <style>
+            #viewport { 
+                display: block;
+                width: 800px;
+                height: 600px;
+                overflow: auto; 
+                cursor: grab; 
+                border: 1px solid black;
+            }
+            #viewcontent {
+                position: relative;
+                width: 800px;
+                height: 333px;
+                box-sizing: border-box;
+                border: 1px solid blue;
+            }
+            #simulatorWrapper { 
+                position: absolute;
+                width: 0;
+                height: 0;
+            }
+            #simulator{
+                position: absolute; 
+                transform-origin: 0px 0px;
+                left: 0;
+                top: 0;
+                width: 1440px;
+                height: 600px;
+            }
+            iframe {
+                border: none;
+                min-width: 100%; /* 避免宽度被限制 */
+                height: 100%;
+                background: #ebebeb;
+            }
+        </style>
+        <script src="./zoompan-box2.js"></script>
+    </head>
+    <body>
+        <div id="viewport">
+            <div id="viewcontent">
+                <div id="simulatorWrapper">
+                    <div id="simulator">
+                        <iframe scrolling="no" id="iframe" src="https://projectmanage.netease-official.lcap.163yun.com/dashboard/PersonalWorkstation"></iframe>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <script>
+            const pixel = (val) => `${val}px`;
+            const dom = {
+                viewport: document.querySelector("#viewport"),
+                viewcontent: document.querySelector("#viewcontent"),
+                simulator: document.querySelector('#simulator'),
+                iframe: document.querySelector('#iframe')
+            }
+
+        
+            let zoom = 1.0;
+
+            const viewport = {
+                width: dom.viewport.clientWidth,
+                height: dom.viewport.clientHeight,
+            }
+            const simulator = {
+                width: 1440,
+                height: window.innerHeight
+            }
+
+            const meta = {
+                basicZoom: 1.0,
+                zoom: 1.0,
+                tx: 0,
+                ty: 0,
+            }
+
+            function init() {
+                meta.zoom = viewport.width / simulator.width;
+                meta.basicZoom = meta.zoom;
+                setViewContentBounding(viewport.width, viewport.height);
+                setSimulatorBounding();
+                setSimulatorTransform();
+
+                dom.viewport.addEventListener("wheel", onWheel);
+            }
+
+            function setViewContentBounding(w, h) {
+                dom.viewcontent.style.width = pixel(Math.min(viewport.width, w));
+                dom.viewcontent.style.height = pixel(Math.min(viewport.height, h));
+            }
+
+            function setSimulatorBounding() {
+                dom.simulator.style.width = simulator.width;
+                dom.simulator.style.height = simulator.height;
+            }
+
+            function setSimulatorTransform() {
+                dom.simulator.style.transform = `matrix(${meta.zoom}, 0, 0, ${meta.zoom}, ${meta.tx}, ${meta.ty})`
+            }
+
+            function resolveCurrentOffset(clientX, clientY) {
+                const rect = dom.viewport.getBoundingClientRect()
+                return [clientX - rect.x, clientY - rect.y];
+            }
+
+            function zoomAtPoint(point, val) {
+                const oldzoom = meta.zoom;
+                const newzoom = Math.min(Math.max(parseFloat(oldzoom + val), 0.3), 2);
+                meta.zoom = newzoom;
+                setSimulatorTransform();
+            }
+
+            function onWheel(e) {
+                if(e.ctrlKey) {
+                    e.preventDefault();
+                    const point = resolveCurrentOffset(e.clientX, e.clientY);
+                    zoomAtPoint(point, -e.deltaY / 1000);
+                }
+            }
+
+
+            init();
+
+
+            
+       
+        </script>
+    </body>
+</html>
