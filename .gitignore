@@ -44,7 +44,6 @@ tmp/
 *.pyc
 
 # Build directories
-public/
 download/
 upload/
 app.*.json
