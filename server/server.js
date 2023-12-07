@@ -9,4 +9,4 @@ app.use(express.static('public', {
   }
 }));
 
-app.listen(3000, () => console.log('listening on port 3000!'));
+app.listen(5173, () => console.log('listening on port 3000!'));
