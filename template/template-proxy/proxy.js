@@ -3,7 +3,10 @@
 const status = {
     isDragging: false,
     mouseDownPosition: [],
+    disableMousemoveProxy: false,
     draggingElem: null,
+    isEditing: false,
+    edittingTarget: null,
 }
 
 function postMessageToIDE(data) {
@@ -44,6 +47,12 @@ function pickKeys(obj, keys) {
     return r;
 }
 
+function pointWithinTarget(p, target) {
+    const domtree = document.elementsFromPoint(p[0], p[1]);
+    const element = domtree.find(elem => elem === target);
+    return !!element;
+}
+
 function lockTarget(e) {
     const domtree = document.elementsFromPoint(e.clientX, e.clientY);
     const emptyslot = domtree?.[0]?.hasAttribute('emptyslot');
@@ -74,16 +83,20 @@ function iterateUpWithNodePath(elem, callback) {
     let skipFirstParent = elem.hasAttribute('emptyslot') || elem.getAttribute('ide-iscontainer') === 'false';
     let p = elem.parentNode;
     let flag = false;;
+    let lastP = elem;
     while(p !== document.body) {
         if(p.hasAttribute('nodepath')) {
             if(skipFirstParent) {
                 skipFirstParent = false;
+                lastP = p;
                 p = p.parentNode;
                 continue;
             }
-            callback(p)
-            flag = true;
+            if(callback(p, lastP)){
+                flag = true;
+            }
         }
+        lastP = p;
         p = p.parentNode;
     }
     return flag;
@@ -157,9 +170,21 @@ function prepareElementTransferInfomation(element) {
 }
 
 window.addEventListener('mousedown', (e) => {
+    // e.preventDefault();
+    // e.stopPropagation();
+    const point = [e.clientX, e.clientY];
+    if(status.isEditing) {
+        if(pointWithinTarget(point, status.edittingTarget)) {
+            // status.disableMousemoveProxy = true;
+            return;
+        } else {
+            document.activeElement.blur();
+            return;
+        }
+    }
     e.preventDefault();
     e.stopPropagation();
-    status.mouseDownPosition = [e.clientX, e.clientY];
+    status.mouseDownPosition = point
     const element = lockTarget(e);
     if(element) {
         let p = [e.clientX, e.clientY]
@@ -208,10 +233,23 @@ function debounce(callback, timeout) {
     }
 }
 
-function expandContainerGap(elem) {
+function expandContainerGap(elem, lastElem) {
+    const rectGap = 5;
     if(elem.getAttribute('ide-iscontainer') === 'true'){
-        elem.setAttribute('dropgap', true);
+        const b1 = elem.getBoundingClientRect();
+        const b2 = lastElem.getBoundingClientRect();
+        if (
+            Math.abs(b1.left - b2.left) < rectGap
+            || Math.abs(b1.right - b2.right) < rectGap
+            || Math.abs(b1.top - b2.top) < rectGap
+            || Math.abs(b1.bottom - b2.bottom) < rectGap
+        ) {
+            elem.setAttribute('dropgap', true);
+            return true
+        }  
     }
+
+    return false;
 }
 
 function releaseContainerGap() {
@@ -228,6 +266,7 @@ function releaseDragging() {
         status.draggingElem.removeAttribute('ide-dragging')
     }
     status.draggingElem = null;
+    status.disableMousemoveProxy = false;
     releaseContainerGap();
 }
 
@@ -247,6 +286,9 @@ const hesitateWhenDragging = debounce(function(element) {
 }, 1000)
 
 window.addEventListener('mousemove', (e) => {
+    if(status.isEditing){
+        return;
+    }
     e.stopPropagation();
     const element = lockTarget(e);
     
@@ -312,6 +354,25 @@ window.addEventListener('click', (e) => {
     postMessageToIDE({
         type: 'Event',
         name: 'click',
+        payload: {
+            eventMeta: resolveEvent(e),
+            elementInfo: prepareElementTransferInfomation(element),
+        }
+    });
+    // collectSubElements(element);
+}, CAPTURE_EVENT)
+
+window.addEventListener('dblclick', (e) => {
+    if(status.mouseDownPosition[0] !== e.clientX || status.mouseDownPosition[1] !== e.clientY){
+        return;
+    }
+    e.preventDefault();
+    e.stopPropagation();
+    const element = lockTarget(e);
+    
+    postMessageToIDE({
+        type: 'Event',
+        name: 'dblclick',
         payload: {
             eventMeta: resolveEvent(e),
             elementInfo: prepareElementTransferInfomation(element),
@@ -391,6 +452,27 @@ window.addEventListener('message', (event) => {
       }
   }
 })
+const elementsResizeObserver = new ResizeObserver(entries => {
+    const elementInfos = [];
+    for (const entry of entries) {
+        // console.log(entry.target);
+        const elem = entry.target;
+        const nodePath = elem.getAttribute('nodepath');
+        if(nodePath) {
+            elementInfos.push(prepareElementTransferInfomation(elem));
+        }
+    }
+    if(elementInfos.length > 0){
+        postMessageToIDE({
+            type: 'Event',
+            name: 'refreshBoundings',
+            payload: {
+                elementInfos
+            }
+        })
+    }
+    
+})
 
 const observer = new ResizeObserver(() => {
     console.log(document.body.scrollHeight)
@@ -425,6 +507,40 @@ const methods = {
             observer.observe(elem);
         }
     },
+    editContent(payload) {
+        const elem = document.querySelector(`[nodepath="${payload.nodePath}"]`);
+        if(elem) {
+            elem.addEventListener('blur', (e) => {
+                postMessageToIDE({
+                    type: 'Event',
+                    name: 'contentchange',
+                    payload: {
+                        elementInfo: prepareElementTransferInfomation(elem),
+                        innerText: elem.innerText,
+                    }
+                })
+                elementsResizeObserver.unobserve(elem);
+                status.isEditing = false;
+                status.edittingTarget = null;
+                elem.setAttribute('contentEditable', false);
+            }, { once: true });
+            elementsResizeObserver.observe(elem);
+            elem.setAttribute('contentEditable', true);
+            setTimeout(() => {
+                selectElementContents(elem); 
+            });
+            status.isEditing = true;
+            status.edittingTarget = elem;
+        }
+    }
+}
+
+function selectElementContents(el) {
+    var range = document.createRange();
+    range.selectNodeContents(el);
+    var sel = window.getSelection();
+    sel.removeAllRanges();
+    sel.addRange(range);
 }
 
 postMessageToIDE({
@@ -432,4 +548,5 @@ postMessageToIDE({
     name: 'proxyReady',
     payload: {}
 })
+
 })();

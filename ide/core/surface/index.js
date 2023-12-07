@@ -45,6 +45,15 @@ class Surface {
         })
     }
 
+    refresh(infos) {
+        const targets = [...this.targets, this.highlight_elem];
+        infos.forEach(info => {
+            const exist = targets.find(p => _isSameTarget(p.source, info.source));
+            if(exist) {
+                Object.assign(exist, this.resolveRects(info.rects))
+            } 
+        });
+    }
     
     
     _targetExist(config) {

@@ -1,6 +1,10 @@
 export class Element {
     tag = '';
     isContainer = false;
+    supportEditContent = false;
+    constructor(configs) {
+        Object.assign(this, configs);
+    }
 }
 
 export const CONTAINER_DIRECTION = {

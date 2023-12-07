@@ -268,7 +268,9 @@ import { Element, Container } from './view-model';
 export function UIAdapter(model) {
     switch(model.tag) {
         case 'Button':
-            return new Element();
+            return new Element({
+                supportEditContent: true,
+            });
         case 'Flex':
             return new Container(model);
     }

@@ -208,3 +208,21 @@ ide.addEventListener('frame:dragstart', (e) => {
     DragNode.innerText = MovingNode.tag;
     dragDropBehavior(DragNode, MovingNode);
 })
+
+ide.addEventListener('frame:requestEditContent', (e) => {
+    const nodepath = e.detail.elementInfo.target;
+    const currentNode = getNodeByNodePath(View, nodepath);
+    if(currentNode.elementMeta.supportEditContent){
+        ide.doEditContent(nodepath);
+    }
+});
+
+ide.addEventListener('frame:contentChange', (e) => {
+    const nodepath = e.detail.elementInfo.target;
+    const currentNode = getNodeByNodePath(View, nodepath);
+    if(currentNode.elementMeta.supportEditContent){
+        const content = e.detail.innerText;
+        currentNode.innerText = content;
+        writeFile();
+    }
+})

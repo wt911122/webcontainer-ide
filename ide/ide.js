@@ -170,6 +170,9 @@ class IDE extends EventTarget {
                             detail: data.payload
                         }))
                         break;
+                    case 'refreshBoundings': 
+                        this.refreshBoundings(data.payload);
+                        break;
                     case 'mousemove': 
                         this.highlightNode(data.payload.elementInfo);
                         break;
@@ -190,6 +193,16 @@ class IDE extends EventTarget {
                         break;
                     case 'click':
                         this._focusOnNode(data.payload);
+                        break;
+                    case 'dblclick':
+                        this.dispatchEvent(new CustomEvent('frame:requestEditContent', {
+                            detail: data.payload
+                        }))
+                        break;
+                    case 'contentchange':
+                        this.dispatchEvent(new CustomEvent('frame:contentChange', {
+                            detail: data.payload
+                        }))
                         break;
                     case 'resizeObserver':
                         _frameResized(data.payload);
@@ -234,6 +247,14 @@ class IDE extends EventTarget {
 
     }
 
+    refreshBoundings(payload) {
+        const elementInfos = payload.elementInfos;
+        elementInfos.forEach(elementInfo => {
+            elementInfo.source = this.getSourceByNodePath(elementInfo.target);
+        });
+
+        this.surface.refresh(elementInfos);
+    }
 
     highlightNode(elementInfo) {
         const { target, rects } = elementInfo;
@@ -449,6 +470,15 @@ class IDE extends EventTarget {
         document.addEventListener('mouseup', end)
     }
 
+    doEditContent(nodePath) {
+        this.postIframeMessage({
+            type: 'Method',
+            name: 'editContent',
+            payload: {
+                nodePath,
+            }
+        })
+    }
 
     setCursorInFrame(cursor) {
         this.postIframeMessage({
