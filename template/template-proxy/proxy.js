@@ -9,6 +9,18 @@ const status = {
     edittingTarget: null,
 }
 
+const defaultPayload = {
+    eventMeta: undefined,
+    rects: undefined,
+    target: undefined,
+    elemStyle: {
+        inline: false,
+    },
+    elementInfo: undefined,
+    isEmptySlot: undefined,
+    notAllowed: false,
+}
+
 function postMessageToIDE(data) {
     window.parent.postMessage(data, '*')
 }

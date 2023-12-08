@@ -4,10 +4,7 @@ import jsonData from './data/react.ast.json';
 // import jsonData from './data/vue.ast.json';
 import { makeView, getNodeByNodePath, ViewElement } from './model/index';
 import { UIAdapter } from './model';
-import { prepareDropStrategy, LOC } from './model/prepare-drop-strategy'
-import { CONTAINER_DIRECTION } from './model/view-model';
-import { BoxToRectangle } from './model/utils';
-
+import { chooseStrategy } from './model/prepare-drop-strategy';
 
 const View = makeView(jsonData)
 files.src.directory['App.jsx'] = {
@@ -75,6 +72,8 @@ function writeFile() {
     ide.previewer.writeFile('src/App.jsx',  View.toReactFCFile())
 }
 
+
+
 function dragDropBehavior(domElement, MovingNode) {
     ide.clearFocus();
     const target = {
@@ -82,94 +81,17 @@ function dragDropBehavior(domElement, MovingNode) {
         loc: '',
         isEmptySlot: false,
     };
+    let currentstrategy = null; 
+
     ide.doDrag(domElement, 
         async (payload, active_dragover) => {
-            console.log(payload.elementInfo?.target)
-            if(!payload.notAllowed && payload.inFrame) {
-                const point = [payload.eventMeta.clientX, payload.eventMeta.clientY];
-                let nodePaths;
-                let direction = CONTAINER_DIRECTION.AUTO;
-                console.log(payload);
-                if(payload.elementInfo?.isEmptySlot) {
-                    const elementInfo = payload.elementInfo;
-                    const rect = BoxToRectangle(elementInfo.rects[0]);
-                    ide.surface.highlightSeg(false);
-                    ide.surface.highlightEmptySlot(true, rect);
-                    ide.highlightNodeByNodePath(elementInfo.target);
-                    target.nodePath = elementInfo.target;
-                    target.isEmptySlot = true;
-                    ide.setCursorInFrame('copy');
-                    active_dragover();
-                   
-                    return;
-                }
-                
-                let containerNodePath
-                if(payload.elementInfo?.target) {
-                    const node = getNodeByNodePath(View, payload.elementInfo.target);
-                    console.log(node);
-                    if(node) {
-                        let containerNode = node;
-                        if(!containerNode.elementMeta.isContainer) {
-                            containerNode = containerNode.parentNode;
-                        }
-                        if(containerNode?.elementMeta?.direction) {
-                            direction = containerNode.elementMeta.direction;
-                        }
-                        nodePaths = containerNode.getChildren().filter(n => n !== MovingNode ).map(c => c.nodePath);
-                        containerNodePath = containerNode.nodePath;
-                    }
-                } else {
-                    nodePaths = View.getChildren().map(c => c.nodePath);
-                }
-                if(nodePaths.length > 0) {
-                    console.log(nodePaths);
-                    const { nearestSeg, nodepath, loc } = await prepareDropStrategy(
-                        ide,
-                        point,
-                        nodePaths,
-                        direction,
-                    );
-                    
-                    ide.surface.highlightSeg(true, nearestSeg);
-                    ide.surface.highlightEmptySlot(false)
-                    if(containerNodePath){
-                        ide.highlightNodeByNodePath(containerNodePath);
-                    } else {
-                        ide.closeHighlight();
-                    }
-                    target.isEmptySlot = false;
-                    target.nodePath = nodepath;
-                    target.loc = loc
-                    ide.setCursorInFrame('copy');
-                    active_dragover();
-                    return;
-                }
-                ide.setCursorInFrame('grabbing');
-            } 
-            target.nodePath = '';
-            target.loc = ''
-            ide.surface.highlightSeg(false);
-            ide.surface.highlightEmptySlot(false)
-            ide.closeHighlight();
+            currentstrategy = chooseStrategy(payload, View, MovingNode);
+            await currentstrategy.dragover(ide, target, payload)
             active_dragover();
         }, () => {
-            if(target.nodePath) {
-                const node = getNodeByNodePath(View, target.nodePath);
-                if(node) {
-                    if(target.isEmptySlot) {
-                        node.addChild(MovingNode);
-                    } else {
-                        node.parentNode[target.loc === LOC.PRE ? 'insertNodeBefore': 'insertNodeAfter'](node, MovingNode)
-                        console.log(View)       
-                    }
-                    
-                    writeFile();
-                }
-            }
-            ide.surface.highlightSeg(false);
-            ide.surface.highlightEmptySlot(false)
-            ide.closeHighlight();
+            currentstrategy.drop(ide, target, MovingNode, () => {
+                writeFile()
+            });
             ide.setCursorInFrame('auto');
         });
 }

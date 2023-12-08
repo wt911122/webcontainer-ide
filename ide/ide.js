@@ -441,6 +441,7 @@ class IDE extends EventTarget {
                 elementInfo: null,
                 eventMeta: e,
                 inFrame: false,
+                notAllowed: true,
             }, active_dragover)
         }
         const end = async (e) => {

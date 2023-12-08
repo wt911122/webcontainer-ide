@@ -15,6 +15,7 @@ export const CONTAINER_DIRECTION = {
 }
 
 export class Container extends Element {
-    isContainer = true
+    isContainer = true;
+    isAbsolute = false;
     direction = CONTAINER_DIRECTION.ROW;
 }
