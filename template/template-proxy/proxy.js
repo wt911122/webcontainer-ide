@@ -4,7 +4,7 @@ const status = {
     isDragging: false,
     mouseDownPosition: [],
     disableMousemoveProxy: false,
-    draggingElem: null,
+    draggingElems: [],
     isEditing: false,
     edittingTarget: null,
 }
@@ -117,8 +117,11 @@ function iterateUpWithNodePath(elem, callback) {
 function resolveEvent(e) {
     return pickKeys(e, [
         'ctrlKey',
+        'shiftKey',
         'clientX',
         'clientY',
+        'offsetX',
+        'offsetY',
         'deltaX',
         'deltaY',
     ])
@@ -208,8 +211,6 @@ window.addEventListener('mousedown', (e) => {
             p[1] = e.clientY;
             _d += x + y;
             if(_d > 20) {
-                status.draggingElem = element;
-                element.setAttribute('ide-dragging', true)
                 postMessageToIDE({
                     type: 'Event',
                     name: 'dragstart',
@@ -272,13 +273,29 @@ function releaseContainerGap() {
     hesitateWhenDragging(false);
 }
 
-function releaseDragging() {
+function checkElemIsDragging(element) {
+    return status.draggingElems.find(el => el.contains(element));
+}
+
+function startDraggingElem(nodePaths) {
+    const elems = [];
+    nodePaths.forEach(path => {
+        const elem = document.querySelector(`[nodepath="${path}"]`);
+        if(elem) {
+            elem.setAttribute('ide-dragging', true)
+            elems.push(elem);
+        }
+    })
+    status.draggingElems = elems;
+    status.isDragging = true;
+}
+
+function releaseDraggingElem() {
     status.isDragging = false;
-    if(status.draggingElem) {
-        status.draggingElem.removeAttribute('ide-dragging')
-    }
-    status.draggingElem = null;
-    status.disableMousemoveProxy = false;
+    status.draggingElems.forEach(elem => {
+        elem.removeAttribute('ide-dragging')
+    })
+    status.draggingElems = [];
     releaseContainerGap();
 }
 
@@ -305,7 +322,7 @@ window.addEventListener('mousemove', (e) => {
     const element = lockTarget(e);
     
     if(status.isDragging) {
-        if(status.draggingElem && status.draggingElem.contains(element)) {
+        if(checkElemIsDragging(element)) {
             postMessageToIDE({
                 type: 'Event',
                 name: 'dragover',
@@ -338,6 +355,7 @@ window.addEventListener('mousemove', (e) => {
     }
     
 }, CAPTURE_EVENT);
+
 window.addEventListener('mouseup', (e) => {
     if(status.isDragging) {
         e.preventDefault();
@@ -433,10 +451,10 @@ window.addEventListener('message', (event) => {
     if(data.type === 'Event') {
         switch(data.name) {
             case 'startDragging':
-                status.isDragging = true;
+                startDraggingElem(data.payload.nodePaths);
                 break;
             case 'stopDragging':
-                releaseDragging();
+                releaseDraggingElem();
                 break;
         }
     }

@@ -108,13 +108,50 @@ export default View;
     }
 }
 
+export function CSSInlineStyleToObject(styles) {
+    const styleObj = styles.split(';').map(cur => cur.split(':')).reduce((acc, val) => {
+        if(val.length === 2) {
+            let [key, value] = val;
+            key = key.trim().replace(/-./g, css => css.toUpperCase()[1])
+            acc[key] = value.trim();
+        }
+        return acc;
+    }, {});
+    return styleObj;
+}
+
+export function CSSToStaticStyle (styles) {
+    let str = '';
+    for (const [key, val] of Object.entries(styles)) {
+        str += `${key}:${val};`
+    }
+    return str;
+}
+
+function CSSInlineStyleToObjectString (styles) {
+    const styleObj = CSSInlineStyleToObject(styles);
+    try {
+        return JSON.stringify(styleObj);
+    } catch (err) {
+        return '';
+    }
+}
+     
+
 export class ViewElement extends BaseNode{
+    static accept() {
+        return true;
+    }
     tag = ''
     innerText = ''
     children = []
     bindAttrs = [];
+    staticStyle = '';
 
     get nodePath() {
+        if(!this.parentNode) {
+            return undefined;
+        }
         const parentNode = this.parentNode;
         let list;
         if(parentNode instanceof ViewElement) {
@@ -171,6 +208,7 @@ export class ViewElement extends BaseNode{
         super();
         this.tag = source.tag;
         this.innerText = source.innerText;
+        this.staticStyle = source.staticStyle || '';
         if(source.children) {
             const mapFunc = makeViewElement(this);
             this.children = source.children.map(mapFunc)
@@ -183,7 +221,15 @@ export class ViewElement extends BaseNode{
 
     toReactFCComponent(refComps) {
         refComps.add(this.tag);
-        let compCode = `<${this.tag} nodepath="${this.nodePath}" ide-iscontainer="${this.elementMeta.isContainer}" ${this.bindAttrs.map(a => a.toReactFCComponent()).join(' ')}>`;
+        let compCode = `<${this.tag} nodepath="${this.nodePath}" ide-iscontainer="${this.elementMeta.isContainer}" ${this.bindAttrs.map(a => a.toReactFCComponent()).join(' ')}`;
+        if(this.staticStyle.trim()) {
+            const style = CSSInlineStyleToObjectString(this.staticStyle.trim());
+            if(style) {
+                compCode += ` style={${style}} `;
+            }
+            
+        }
+        compCode += '>'
         if(this.children) {
             if(this.children.length === 0 && this.elementMeta.isContainer) {
                 compCode += `<EmptySlot />`
@@ -244,6 +290,24 @@ export class ViewElement extends BaseNode{
     // }
 }
 
+
+export class AbsoluteElement extends ViewElement {
+    static accept(source) {
+        return source.tag === 'AbsoluteLayout'
+    }
+
+    toReactFCComponent(refComps) {
+        let compCode = `<div nodepath="${this.nodePath}" className="absoluteLayout" ${this.bindAttrs.map(a => a.toReactFCComponent()).join(' ')}>`;
+        if(this.children) {
+            this.children.forEach(el => {
+                compCode += el.toReactFCComponent(refComps);
+            });
+        }
+        compCode += `</div>\n`;
+        return compCode;
+    }
+}
+
 export class BindAttribute extends BaseNode {
     name = '';
     value = '';
@@ -271,8 +335,14 @@ export function UIAdapter(model) {
             return new Element({
                 supportEditContent: true,
             });
+        case 'AbsoluteLayout':
+            return new Container({
+                isAbsolute: true,
+            });
         case 'Flex':
-            return new Container(model);
+            return new Container();
+        default: 
+            return new Element();
     }
 }
 
@@ -280,9 +350,16 @@ export function makeView(rootView) {
     return new View(rootView);
 }
 
+// order matters
+const ViewElementClass = [
+    AbsoluteElement,
+    ViewElement
+]
+
 function makeViewElement(parent) {
     return (source) => {
-        const element = new ViewElement(source);
+        const Ctor = ViewElementClass.find(c => c.accept(source));
+        const element = new Ctor(source);
         element.elementMeta = UIAdapter(element);
         element.parentNode = parent;
         return element;

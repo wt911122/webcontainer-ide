@@ -18,4 +18,8 @@ export class Container extends Element {
     isContainer = true;
     isAbsolute = false;
     direction = CONTAINER_DIRECTION.ROW;
+    constructor(configs) {
+        super(configs);
+        Object.assign(this, configs);
+    }
 }

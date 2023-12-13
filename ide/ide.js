@@ -50,18 +50,6 @@ class IDE extends EventTarget {
 
     postIframeMessage = null;
 
-    temp = {
-        type: undefined,
-        active: false,
-        positionFunc: undefined,
-        popperPosition: [0, 0],
-        target: null,
-    }
-
-    status = {
-        dragging: false,
-    }
-
     constructor(configs){
         super();
         this.previewer = new Previewer();
@@ -154,9 +142,8 @@ class IDE extends EventTarget {
                 }
             }
             getElement.execute = false;
-            
-            
         }
+
         window.addEventListener('message', (event) => {
             const data = event.data;
             if(data.type === 'Event') {
@@ -167,7 +154,7 @@ class IDE extends EventTarget {
                         break;
                     case 'dragstart':
                         this.dispatchEvent(new CustomEvent('frame:dragstart', {
-                            detail: data.payload
+                            detail: data.payload,
                         }))
                         break;
                     case 'refreshBoundings': 
@@ -283,13 +270,22 @@ class IDE extends EventTarget {
 
     _focusOnNode(payload) {
         const { target, rects } = payload.elementInfo;
+        const { shiftKey } = payload.eventMeta;
         if(target) {
             this.surface.closeHighlightElem()
             const source = this.getSourceByNodePath(target);
-            this.surface.setFocus({
-                source,
-                rects,
-            })
+            if(shiftKey) {
+                this.surface.addFocus({
+                    source,
+                    rects,
+                })
+            } else {
+                this.surface.setFocus({
+                    source,
+                    rects,
+                })
+            }
+           
         } else {
             this.surface.setFocus();
         }
@@ -403,17 +399,21 @@ class IDE extends EventTarget {
     }
 
     
-    doDrag(target, onDragover, onDragend) {
+    doDrag(target, movingNodePaths, onDragStart, onDragover, onDragend) {
         this.postIframeMessage({
             type: 'Event',
-            name: 'startDragging'
+            name: 'startDragging',
+            payload: {
+                nodePaths: movingNodePaths
+            }
         });
-        this.status.dragging = true;
         const dragbutton = document.importNode(target)
         dragbutton.style.position = 'fixed';
         dragbutton.style['pointer-events'] = 'none';
         document.body.appendChild(dragbutton);
         
+        
+
         const dragover = (e) => {
             if(onDragover.execute) return;
             onDragover.execute = true;
@@ -469,6 +469,9 @@ class IDE extends EventTarget {
         this.addEventListener('frame:hesitateWhenDragging', whenHesitate)
         document.addEventListener('mousemove', f);
         document.addEventListener('mouseup', end)
+        if(onDragStart) {
+            onDragStart();
+        }
     }
 
     doEditContent(nodePath) {

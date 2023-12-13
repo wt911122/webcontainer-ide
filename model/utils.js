@@ -42,6 +42,15 @@ export function BoxToSegmentsVertical(box) {
     ]
 }
 
+export function BoxToSegments(box) {
+    return [
+        [box.left, box.top, box.right, box.top],
+        [box.left, box.bottom, box.right, box.bottom],
+        [box.left, box.top, box.left, box.bottom],
+        [box.right, box.top, box.right, box.bottom],
+    ]
+}
+
 export function shiftVerticalSegBy(seg, shift) {
     seg[0] += shift;
     seg[2] += shift;

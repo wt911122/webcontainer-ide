@@ -55,6 +55,9 @@ class Surface {
         });
     }
     
+    hasTarget(source) {
+        return this.targets.find(p => _isSameTarget(p.source, source));
+    }
     
     _targetExist(config) {
         const exist = this.targets.find(p => _isSameTarget(p.source, config.source));
@@ -78,20 +81,37 @@ class Surface {
         }   
     }
 
+    getFocusNodes() {
+        return this.targets.map(t => toRaw(t.source));
+    }
+    
     setFocus(config){
         if(!config) {
-            this.targets.length = 0;
+            const l = this.targets.length;
+            this.targets.splice(0, l)
             return
         }
         if(this._targetExist(config)) {
             return;
         }
         this.closeHighlightElem();
-        this.targets[0] = {
+        const l = this.targets.length;
+        this.targets.splice(0, l, {
             ...config,
             ...this.resolveRects(config.rects),
             active: true,
-        };
+        });
+    }
+
+    addFocus(config) {
+        if(this._targetExist(config)) {
+            return;
+        }
+        this.targets.push({
+            ...config,
+            ...this.resolveRects(config.rects),
+            active: true,
+        })
     }
 
     closeHighlightElem() {
