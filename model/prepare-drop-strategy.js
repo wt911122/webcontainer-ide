@@ -60,6 +60,30 @@ function batchInsertNodeAfter(node, newNodes) {
     }
 }
 
+function removeKeys(obj, keys) {
+    const r = {};
+    keys.forEach(k => {
+        if(k in obj){
+            delete obj[k];
+        }
+    })
+    return r;
+} 
+
+function removePositionStyleFromNodeInsideAbsoluteLayout(node) {
+    if(node.parentNode?.elementMeta?.isAbsolute) {
+        const style = CSSInlineStyleToObject(node.staticStyle)
+        removeKeys(style, ['left', 'right', 'top', 'bottom']);
+        node.staticStyle = CSSToStaticStyle(style);
+    }
+}
+
+function beforeDrop(MovingNodes) {
+    MovingNodes.forEach(node => {
+        removePositionStyleFromNodeInsideAbsoluteLayout(node);
+    })
+}
+
 async function _prepareDrop(ide, Container, point, nodePaths, direction) {
     const info = await ide.getElementsInfoByNodePath(nodePaths);
     let { getSegs, shiftHighlighter } = SEGMENT_STATEGY[direction];
@@ -140,6 +164,7 @@ const EmptySlotStrategy = (View) => ({
     drop(ide, context, MovingNodes, callback) {
         const node = getNodeByNodePath(View, context.nodePath);
         if(node) {
+            beforeDrop(MovingNodes);
             batchAddChild(node, MovingNodes);
         }
         ide.surface.highlightSeg(false);
@@ -190,6 +215,7 @@ const ViewRootDropStrategy = (View) => {
         drop(ide, context, MovingNodes, callback) {
             const node = getNodeByNodePath(View, context.nodePath);
             if(node) {
+                beforeDrop(MovingNodes);
                 normalInsertNodes(node, context.loc, MovingNodes);
             }
             ide.surface.highlightSeg(false);
@@ -214,6 +240,7 @@ const ContainerDropStrategy = (View, Container, MovingNodes) => {
         drop(ide, context, MovingNodes, callback) {
             const node = getNodeByNodePath(View, context.nodePath);
             if(node) {
+                beforeDrop(MovingNodes);
                 normalInsertNodes(node, context.loc, MovingNodes)
             }
             ide.surface.highlightSeg(false);
@@ -227,26 +254,77 @@ const ContainerDropStrategy = (View, Container, MovingNodes) => {
 const AbsoluteDropStrategy = (View, Container, MovingNodes) => {
     return {
         async dragover(ide, context, payload) {
-            // const point = [payload.eventMeta.clientX, payload.eventMeta.clientY];
-            const offset = [payload.eventMeta.offsetX, payload.eventMeta.offsetY];
-            // console.log(point, point2);
             context.nodePath = Container.nodePath;
-            context.offset = offset
+            context.toCoord = [payload.eventMeta.clientX, payload.eventMeta.clientY]
             ide.surface.highlightSeg(false);
             ide.surface.highlightEmptySlot(false)
             ide.highlightNodeByNodePath(Container.nodePath);
+           /* if(context.fromNodePath) {
+                const dragNode = getNodeByNodePath(View, context.fromNodePath);
+                if(dragNode.parentNode === Container) {
+                    const payload = {
+                        temporaryStyles: [],
+                    }
+                    const deltaX = context.toCoord[0] - context.fromCoord[0];
+                    const deltaY = context.toCoord[1] - context.fromCoord[1];
+                    const movingNodeInfos = context.movingNodeInfos;
+                    const containerInfo = await ide.getElementInfoByNodePath(context.nodePath)
+                    const containerbox = containerInfo.rects[0];
+                    MovingNodes.forEach(node => {
+                        if(node.parentNode === Container) {
+                            const nodePath = node.nodePath;
+                            const info = movingNodeInfos[nodePath];
+                            const box = info.rects[0];
+                            const style = CSSInlineStyleToObject(node.staticStyle)
+                            removeKeys(style, ['left', 'right', 'top', 'bottom']);
+                            payload.temporaryStyles.push({
+                                nodePath,
+                                style: CSSToStaticStyle(Object.assign(style, {
+                                    left: `${box.x - containerbox.x + deltaX}px`,
+                                    top: `${box.y - containerbox.y + deltaY}px`
+                                }))
+                            })
+                        }
+                    });
+                    if(payload.temporaryStyles.length > 0) {
+                        ide.setElementsTemporaryStyle(payload)
+                    }
+                }
+            }*/
         },
-        drop(ide, context, MovingNodes, callback) {
+        async drop(ide, context, MovingNodes, callback) {
             const containerNode = getNodeByNodePath(View, context.nodePath);
             if(containerNode) {
+                const movingNodeInfos = context.movingNodeInfos;
+                const containerInfo = await ide.getElementInfoByNodePath(context.nodePath)
+                const containerbox = containerInfo.rects[0];
                 MovingNodes.forEach(node => {
-                    const style = Object.assign({
-                        ...CSSInlineStyleToObject(node.staticStyle),
-                        left: `${context.offset[0] - context.nodeOffset[0]}px`,
-                        top: `${context.offset[1] - context.nodeOffset[1]}px`
-                    });
-                    containerNode.addChild(node);
-                    node.staticStyle = CSSToStaticStyle(style);
+                    if(node.parentNode === containerNode) {
+                        const deltaX = context.toCoord[0] - context.fromCoord[0];
+                        const deltaY = context.toCoord[1] - context.fromCoord[1];
+                        const info = movingNodeInfos[node.nodePath];
+                        if(info) {
+                            const box = info.rects[0];
+                            
+                            const style = Object.assign({
+                                ...CSSInlineStyleToObject(node.staticStyle),
+                                left: `${box.x - containerbox.x + deltaX}px`,
+                                top: `${box.y - containerbox.y + deltaY}px`
+                            });
+                            node.staticStyle = CSSToStaticStyle(style);
+                            node.updateComponentKey();
+                        }
+                        
+                    } else {
+                        removePositionStyleFromNodeInsideAbsoluteLayout(node);
+                        const style = Object.assign({
+                            ...CSSInlineStyleToObject(node.staticStyle),
+                            left: `${context.toCoord[0] - containerbox.x}px`,
+                            top: `${context.toCoord[1] - containerbox.y}px`
+                        });
+                        containerNode.addChild(node);
+                        node.staticStyle = CSSToStaticStyle(style);
+                    }
                     ide.surface.highlightSeg(false);
                     ide.surface.highlightEmptySlot(false);
                     ide.closeHighlight();
@@ -287,19 +365,43 @@ export function chooseStrategy(payload, View, MovingNodes) {
     }
 }
 
-function AbsoluteDragStartStrategy(context, elementInfo, eventMeta) {
-    const rect = elementInfo.rects[0];
-    context.nodeOffset = [eventMeta.clientX - rect.x, eventMeta.clientY - rect.y];
+function AbsoluteDragStartStrategy(View, elementInfo, eventMeta) {
+    return async (ide, context, MovingNodes) => {
+        const movingNodePaths = MovingNodes.map(n => n.nodePath)
+        context.fromCoord = [eventMeta.clientX, eventMeta.clientY];
+        context.fromNodePath = elementInfo.target;
+        context.fromAbsolute = true;
+        const infos = await ide.getElementsInfoByNodePath(movingNodePaths);
+        context.movingNodeInfos = infos;
+
+        const dragNode = getNodeByNodePath(View, elementInfo.target);
+        const Container = dragNode.parentNode;
+        const payload = {
+            nodePaths: [],
+        }
+        MovingNodes.forEach(node => {
+            if(node.parentNode === Container) {
+                const nodePath = node.nodePath;
+                payload.nodePaths.push(nodePath)
+            }
+        });
+        
+        if(payload.nodePaths.length > 0) {
+            ide.makeDraggingElemMove(payload)
+        }
+    }
+    
 }
 
-export function dragStartStrategy(context, View, elementInfo, eventMeta) {
+export function dragStartStrategy(View, elementInfo, eventMeta) {
     if(elementInfo?.target) {
         const node = getNodeByNodePath(View, elementInfo.target);
         if(node) {
             const containerNode = node.parentNode;
             if(containerNode?.elementMeta?.isAbsolute) {
-                AbsoluteDragStartStrategy(context, elementInfo, eventMeta)
+                return AbsoluteDragStartStrategy(View, elementInfo, eventMeta)
             }
         }
     }
+    return null;
 }

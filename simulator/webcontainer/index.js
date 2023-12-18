@@ -1,17 +1,15 @@
+import { Simulator } from '../../ide/simulator-interface';
 import { WebContainer } from '@webcontainer/api';
 
-class Previewer extends EventTarget {
+class WebContainerSimulator extends Simulator {
     webcontainer = null;
+    options = {
+        showOpenInCodeSandbox: false,
+        showErrorScreen: false,
+        showLoadingScreen: false,
+    };
 
-    setIframe(iframe){
-        this.iframe = iframe;
-    }
-
-    setProject(project) {
-        this.project = project;
-    }
-
-    async load() {
+    async launch() {
         const webcontainer = await WebContainer.boot({
             coep: 'credentialless',
         });
@@ -52,18 +50,18 @@ class Previewer extends EventTarget {
         // Wait for `server-ready` event
         webcontainer.on('server-ready', (port, url) => {
             console.log(url)
-            iframe.addEventListener('load', () => {
-
-            }, {
-                once: true,
-            }) 
+            // iframe.addEventListener('load', () => {
+            //     this.dispatchEvent(new CustomEvent('simulator:ready'))
+            // }, {
+            //     once: true,
+            // }) 
             iframe.src = url;
         });
     }
 
-    async writeFile(path, content) {
+    async updateProject(path, content) {
         await this.webcontainer.fs.writeFile(path, content);
     }
 }
 
-export default Previewer;
+export default WebContainerSimulator;

@@ -1,4 +1,4 @@
-import Previewer from './previewer/previewer';
+// import Previewer from './previewer/previewer';
 import { makeElement, transformAttr } from './core/utils';
 import Surface from './core/surface';
 
@@ -52,8 +52,9 @@ class IDE extends EventTarget {
 
     constructor(configs){
         super();
-        this.previewer = new Previewer();
-        this.previewer.setProject(configs.project)
+        this.simulator = configs.simulator;
+        // this.previewer = new Previewer();
+        // this.previewer.setProject(configs.project)
         this.surface = new Surface();
         this.getSourceByNodePath = configs.getSourceByNodePath;
         this.preRegistMethods();
@@ -76,7 +77,28 @@ class IDE extends EventTarget {
         }
 
         let ready = false;
-        iframe.onload = () => {
+        // iframe.onload = () => {
+        //     console.log('onload!')
+        //     window.addEventListener('message', (event) => {
+        //         const data = event.data;
+        //         if(!ready && data.type === 'Event' && data.name === 'proxyReady') {
+        //             const source = event.source;
+        //             const origin = event.origin;
+        //             this._init();
+        //             this.postIframeMessage = (data) => {
+        //                 source.postMessage(data, origin)
+        //             }
+        //             this.dispatchEvent(new CustomEvent('ready', {
+        //                 detail: {
+        //                     target: this.iframe,
+        //                 }
+        //             })); 
+        //             ready = true;   
+        //         }
+        //     })
+        // }
+        dom.appendChild(viewport);
+        iframe.addEventListener('load', () => {
             console.log('onload!')
             window.addEventListener('message', (event) => {
                 const data = event.data;
@@ -95,13 +117,10 @@ class IDE extends EventTarget {
                     ready = true;   
                 }
             })
-            // iframe.contentWindow.addEventListener('wheel', _wheelHandlerInIframe, { passive: false })
-            // simulator.height = iframe.contentWindow.document.body.scrollHeight;
-              
-        }
-        dom.appendChild(viewport);
-        this.previewer.setIframe(iframe)
-        this.previewer.load();
+        })
+        viewcontent.style.height = `${viewport.getBoundingClientRect().height}px`
+        this.simulator.load(iframe)
+        // this.previewer.load();
     }
 
     _init() {
@@ -399,7 +418,7 @@ class IDE extends EventTarget {
     }
 
     
-    doDrag(target, movingNodePaths, onDragStart, onDragover, onDragend) {
+    async doDrag(target, movingNodePaths, onDragStart, onDragover, onDragend) {
         this.postIframeMessage({
             type: 'Event',
             name: 'startDragging',
@@ -412,6 +431,9 @@ class IDE extends EventTarget {
         dragbutton.style['pointer-events'] = 'none';
         document.body.appendChild(dragbutton);
         
+        if(onDragStart) {
+            await onDragStart();
+        }
         
 
         const dragover = (e) => {
@@ -469,9 +491,7 @@ class IDE extends EventTarget {
         this.addEventListener('frame:hesitateWhenDragging', whenHesitate)
         document.addEventListener('mousemove', f);
         document.addEventListener('mouseup', end)
-        if(onDragStart) {
-            onDragStart();
-        }
+        
     }
 
     doEditContent(nodePath) {
@@ -511,7 +531,7 @@ class IDE extends EventTarget {
                 nodePath,
             }
         });
-        console.log(info)
+        // console.log(info)
         return info;
     }
 
@@ -536,6 +556,29 @@ class IDE extends EventTarget {
         })
     }
 
+    setElementsTemporaryStyle(payload) {
+        this.postIframeMessage({
+            type: 'Method',
+            name: 'setElementsTemporaryStyle',
+            payload
+        })
+    }
+
+    setElementsTemporaryAttribute(payload) {
+        this.postIframeMessage({
+            type: 'Method',
+            name: 'setElementsTemporaryAttribute',
+            payload
+        })
+    }
+
+    makeDraggingElemMove(payload) {
+        this.postIframeMessage({
+            type: 'Event',
+            name: 'makeDraggingElemMove',
+            payload
+        })
+    }
 
     registMethod(name, method) {
         const { isAsync, body } = method

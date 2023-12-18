@@ -2,9 +2,12 @@
     
 const status = {
     isDragging: false,
+    mouseCurrentLocation: [],
     mouseDownPosition: [],
+    mouseMovingPosition: [],
     disableMousemoveProxy: false,
     draggingElems: [],
+    draggingMoveElems: [],
     isEditing: false,
     edittingTarget: null,
 }
@@ -66,6 +69,8 @@ function pointWithinTarget(p, target) {
 }
 
 function lockTarget(e) {
+    status.mouseCurrentLocation[0] = e.clientX;
+    status.mouseCurrentLocation[1] = e.clientY;
     const domtree = document.elementsFromPoint(e.clientX, e.clientY);
     const emptyslot = domtree?.[0]?.hasAttribute('emptyslot');
     if(emptyslot) {
@@ -268,6 +273,7 @@ function expandContainerGap(elem, lastElem) {
 function releaseContainerGap() {
     const elems = document.querySelectorAll(`[dropgap]`);
     Array.from(elems).forEach(el => {
+        
         el.removeAttribute('dropgap')
     })
     hesitateWhenDragging(false);
@@ -290,13 +296,49 @@ function startDraggingElem(nodePaths) {
     status.isDragging = true;
 }
 
+function makeDraggingElemMove(nodePaths) {
+    const elems = [];
+    nodePaths.forEach(path => {
+        const elem = document.querySelector(`[nodepath="${path}"]`);
+        if(elem) {
+            elem.setAttribute('ide-dragging-move', true)
+            elems.push({
+                offset: [0,0],
+                elem,
+            });
+        }
+    });
+    status.mouseMovingPosition[0] = status.mouseCurrentLocation[0];
+    status.mouseMovingPosition[1] = status.mouseCurrentLocation[1];
+    status.draggingMoveElems = elems;
+}
+
 function releaseDraggingElem() {
     status.isDragging = false;
     status.draggingElems.forEach(elem => {
         elem.removeAttribute('ide-dragging')
+        elem.removeAttribute('ide-dragging-move')
+    })
+    status.draggingMoveElems.forEach(({ elem }) => {
+        // elem.style.removeProperty('transform');
     })
     status.draggingElems = [];
+    status.draggingMoveElems = [];
     releaseContainerGap();
+}
+
+function handlerMovingElemWhenDragging() {
+    const deltaX = status.mouseCurrentLocation[0] - status.mouseMovingPosition[0];
+    const deltaY = status.mouseCurrentLocation[1] - status.mouseMovingPosition[1];
+    status.draggingMoveElems.forEach(({ elem, offset}) => {
+        offset[0] += deltaX;
+        offset[1] += deltaY;
+        elem.style.setProperty('transform', `translate(${offset[0]}px, ${offset[1]}px)`);
+    })
+    console.log('handlerMovingElemWhenDragging')
+
+    status.mouseMovingPosition[0] = status.mouseCurrentLocation[0];
+    status.mouseMovingPosition[1] = status.mouseCurrentLocation[1];
 }
 
 const hesitateWhenDragging = debounce(function(element) {
@@ -335,6 +377,7 @@ window.addEventListener('mousemove', (e) => {
             return;
         }
         hesitateWhenDragging(true, element);
+        handlerMovingElemWhenDragging();
         postMessageToIDE({
             type: 'Event',
             name: 'dragover',
@@ -353,6 +396,7 @@ window.addEventListener('mousemove', (e) => {
             }
         });
     }
+    
     
 }, CAPTURE_EVENT);
 
@@ -453,6 +497,9 @@ window.addEventListener('message', (event) => {
             case 'startDragging':
                 startDraggingElem(data.payload.nodePaths);
                 break;
+            case 'makeDraggingElemMove':
+                makeDraggingElemMove(data.payload.nodePaths);
+                break;
             case 'stopDragging':
                 releaseDraggingElem();
                 break;
@@ -531,6 +578,21 @@ const methods = {
     setCursor(payload) {
         document.body.setAttribute('ide-cursor', payload.cursor);
     },
+    setElementsTemporaryStyle(payload) {
+        payload.temporaryStyles.forEach(meta => {
+            const elem = document.querySelector(`[nodepath="${meta.nodePath}"]`);
+            elem.style = meta.style;
+            console.log(meta.style)
+        })
+    },
+    setElementsTemporaryAttribute(payload) {
+        payload.temporaryAttributes.forEach(meta => {
+            const elem = document.querySelector(`[nodepath="${meta.nodePath}"]`);
+            meta.attributes.forEach(attr => {
+                elem.setAttribute(attr[0], attr[1]);
+            })
+        })
+    },
     startObserveRootNodeSize(payload) { 
         const elem = document.querySelector(payload.selector);
         if(elem) {
@@ -572,7 +634,7 @@ function selectElementContents(el) {
     sel.removeAllRanges();
     sel.addRange(range);
 }
-
+console.log('post proxy ready')
 postMessageToIDE({
     type: 'Event',
     name: 'proxyReady',

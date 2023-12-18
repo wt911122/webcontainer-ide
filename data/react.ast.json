@@ -42,6 +42,25 @@
                     ]
                 }
             ]
+        },
+        {
+            "concept": "ViewElement",
+            "tag": "AbsoluteLayout",
+            "children": [
+                {
+                    "concept": "ViewElement",
+                    "tag": "Button",
+                    "innerText": "button3",
+                    "bindAttrs": [
+                        {
+                            "concept": "BindAttribute",
+                            "name": "type",
+                            "value": "primary"
+                        }
+                    ],
+                    "staticStyle": "left: 20px; top: 20px;"
+                }
+            ]
         }
     ]
 }

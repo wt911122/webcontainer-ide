@@ -1,5 +1,13 @@
+let key = 1;
 class BaseNode {
+    componentKey = 0;
     parentNode = null;
+    constructor() {
+        this.componentKey = key++;
+    }
+    updateComponentKey() {
+        this.componentKey = key++;
+    }
     getSiblings() { }
     getChildren() { }
     getChildIndex(node) { }
@@ -117,6 +125,10 @@ export function CSSInlineStyleToObject(styles) {
         }
         return acc;
     }, {});
+    
+    // return Object.assign({
+    //     transform: 'translate(0, 0)'
+    // }, styleObj);
     return styleObj;
 }
 
@@ -221,7 +233,7 @@ export class ViewElement extends BaseNode{
 
     toReactFCComponent(refComps) {
         refComps.add(this.tag);
-        let compCode = `<${this.tag} nodepath="${this.nodePath}" ide-iscontainer="${this.elementMeta.isContainer}" ${this.bindAttrs.map(a => a.toReactFCComponent()).join(' ')}`;
+        let compCode = `<${this.tag} key="${this.componentKey}" nodepath="${this.nodePath}" ide-iscontainer="${this.elementMeta.isContainer}" ${this.bindAttrs.map(a => a.toReactFCComponent()).join(' ')}`;
         if(this.staticStyle.trim()) {
             const style = CSSInlineStyleToObjectString(this.staticStyle.trim());
             if(style) {
@@ -297,7 +309,7 @@ export class AbsoluteElement extends ViewElement {
     }
 
     toReactFCComponent(refComps) {
-        let compCode = `<div nodepath="${this.nodePath}" className="absoluteLayout" ${this.bindAttrs.map(a => a.toReactFCComponent()).join(' ')}>`;
+        let compCode = `<div key="${this.componentKey}" nodepath="${this.nodePath}" className="absoluteLayout" ${this.bindAttrs.map(a => a.toReactFCComponent()).join(' ')}>`;
         if(this.children) {
             this.children.forEach(el => {
                 compCode += el.toReactFCComponent(refComps);

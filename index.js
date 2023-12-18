@@ -5,22 +5,24 @@ import jsonData from './data/react.ast.json';
 import { makeView, getNodeByNodePath, ViewElement } from './model/index';
 import { UIAdapter } from './model';
 import { chooseStrategy, dragStartStrategy } from './model/prepare-drop-strategy';
-
+// import WebContainerSimulator from './simulator/webcontainer/index';
+import CodeSandBoxSimulator from './simulator/codesandbox';
+console.log(files);
 const View = makeView(jsonData)
-files.src.directory['App.jsx'] = {
-    file: {
-        contents: View.toReactFCFile()
-    }
-}
-// files.src.directory['App.vue'] = {
+// files.src.directory['App.jsx'] = {
 //     file: {
-//         contents: View.toVueTmplFile()
+//         contents: View.toReactFCFile()
 //     }
 // }
+files.files['/src/App.jsx'] = {
+    code: View.toReactFCFile()
+}
 
 console.log(files)
+// const simulator = new WebContainerSimulator(files);
+const simulator = new CodeSandBoxSimulator(files);
 const ide = new IDE({
-    project: files,
+    simulator,
     getSourceByNodePath(nodepath) {
         return getNodeByNodePath(View, nodepath);
     }
@@ -52,6 +54,8 @@ ide.registMethod('getParentNodePath', {
         return node.parentNode.nodePath;
     }
 });
+
+
 ide.addEventListener('ready', () => {
     ide.startObserveRootElem('#root');
 })
@@ -69,7 +73,10 @@ ide.addEventListener('ready', () => {
 ide.$mount(document.querySelector('#app'));
 
 function writeFile() {
-    ide.previewer.writeFile('src/App.jsx',  View.toReactFCFile())
+    const content = View.toReactFCFile();
+    console.log(content);
+    simulator.updateProject('src/App.jsx', content);
+    // ide.previewer.writeFile('src/App.jsx',  content)
 }
 
 
@@ -80,25 +87,34 @@ function dragDropBehavior(domElement, MovingNodes, event) {
         nodePath: '',
         loc: '',
         isEmptySlot: false,
-        offset: null,
-        nodeOffset: [0, 0],
+        
+        // for absolute Layout
+        fromAbsolute: false,
+        movingNodeInfos: [],
+        fromCoord: [0, 0],
+        toCoord: [0, 0],
+        fromNodePath: null,
     };
     let currentstrategy = null; 
     
-
-    ide.doDrag(domElement, MovingNodes.map(n => n.nodePath),
-        () => {
+    const movingNodePaths = MovingNodes.map(n => n.nodePath)
+    ide.doDrag(domElement, movingNodePaths,
+        async () => {
             if(event) {
                 const { elementInfo, eventMeta } = event.detail;
-                dragStartStrategy(target, View, elementInfo, eventMeta)
+                const _s = dragStartStrategy(View, elementInfo, eventMeta);
+                if(_s) {
+                    await _s(ide, target, MovingNodes);
+                }
             }
         },
         async (payload, active_dragover) => {
             currentstrategy = chooseStrategy(payload, View, MovingNodes);
             await currentstrategy.dragover(ide, target, payload)
             active_dragover();
-        }, () => {
-            currentstrategy.drop(ide, target, MovingNodes, () => {
+        }, 
+        async () => {
+            await currentstrategy.drop(ide, target, MovingNodes, () => {
                 writeFile()
             });
             ide.setCursorInFrame('auto');

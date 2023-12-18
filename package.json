@@ -11,6 +11,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@codesandbox/sandpack-client": "^2.10.0",
     "@webcontainer/api": "^1.1.7",
     "vue": "^3.3.9"
   },
