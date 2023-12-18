@@ -8,5 +8,9 @@ export default defineConfig({
   //     'Cross-Origin-Opener-Policy': 'same-origin',
   //   },
   // },
+  base: '/webcontainer-ide/',
   plugins: [vue()],
+  build: {
+    outDir: 'docs'
+  }
 });
