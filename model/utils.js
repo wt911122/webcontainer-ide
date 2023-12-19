@@ -80,3 +80,33 @@ export function BoxToSegmentsAuto(box, elementInfo) {
 export function BoxToRectangle(box) {
     return [box.x, box.y, box.width, box.height]
 } 
+
+export function CSSInlineStyleToObject(styles = '') {
+    const styleObj = styles.split(';').map(cur => cur.split(':')).reduce((acc, val) => {
+        if(val.length === 2) {
+            let [key, value] = val;
+            key = key.trim().replace(/-./g, css => css.toUpperCase()[1])
+            acc[key] = value.trim();
+        }
+        return acc;
+    }, {});
+    return styleObj;
+}
+
+export function CSSToStaticStyle (styles = {}) {
+    let str = '';
+    for (const [key, val] of Object.entries(styles)) {
+        str += `${key}:${val};`
+    }
+    return str;
+}
+
+export function CSSInlineStyleToObjectString (styles) {
+    const styleObj = CSSInlineStyleToObject(styles);
+    try {
+        return JSON.stringify(styleObj);
+    } catch (err) {
+        return '';
+    }
+}
+  

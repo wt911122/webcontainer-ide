@@ -6,11 +6,14 @@ import {
     shiftVerticalSegBy,
     shiftHorizontalSegBy,
     shiftAutoSegBy,
-    BoxToRectangle
+    BoxToRectangle,
+    CSSInlineStyleToObject,
+    CSSToStaticStyle
 } from './utils';
 
-import { CONTAINER_DIRECTION } from './view-model';
-import { getNodeByNodePath, CSSInlineStyleToObject, CSSToStaticStyle } from './index';
+import { CONTAINER_DIRECTION, getNodeByNodePath } from './ui-model/base';
+// import { getNodeByNodePath, CSSInlineStyleToObject, CSSToStaticStyle } from './index';
+
 
 const SEGMENT_STATEGY = {
     [CONTAINER_DIRECTION.ROW]: {
@@ -71,7 +74,7 @@ function removeKeys(obj, keys) {
 } 
 
 function removePositionStyleFromNodeInsideAbsoluteLayout(node) {
-    if(node.parentNode?.elementMeta?.isAbsolute) {
+    if(node.parentNode?.isAbsolute) {
         const style = CSSInlineStyleToObject(node.staticStyle)
         removeKeys(style, ['left', 'right', 'top', 'bottom']);
         node.staticStyle = CSSToStaticStyle(style);
@@ -151,7 +154,7 @@ const NotAllowedStrategy = {
     }
 }
 
-const EmptySlotStrategy = (View) => ({
+const EmptySlotStrategy = (ViewRoot) => ({
     dragover(ide, context, payload) {
         const elementInfo = payload.elementInfo;
         const rect = BoxToRectangle(elementInfo.rects[0]);
@@ -162,7 +165,7 @@ const EmptySlotStrategy = (View) => ({
         ide.setCursorInFrame('copy');
     },
     drop(ide, context, MovingNodes, callback) {
-        const node = getNodeByNodePath(View, context.nodePath);
+        const node = getNodeByNodePath(ViewRoot, context.nodePath);
         if(node) {
             beforeDrop(MovingNodes);
             batchAddChild(node, MovingNodes);
@@ -203,17 +206,17 @@ function normalInsertNodes(node, loc, newNodes) {
     }
 }
 
-const ViewRootDropStrategy = (View) => {
+const ViewRootDropStrategy = (ViewRoot) => {
     return {
         async dragover(ide, context, payload) {
             const point = [payload.eventMeta.clientX, payload.eventMeta.clientY];
-            const nodePaths = View.getChildren().map(c => c.nodePath);
+            const nodePaths = ViewRoot.elements.map(c => c.nodePath);
             if(nodePaths.length > 0) {
                 await normalPreDrop(ide, null, context, point, nodePaths, CONTAINER_DIRECTION.AUTO)
             }
         },
         drop(ide, context, MovingNodes, callback) {
-            const node = getNodeByNodePath(View, context.nodePath);
+            const node = getNodeByNodePath(ViewRoot, context.nodePath);
             if(node) {
                 beforeDrop(MovingNodes);
                 normalInsertNodes(node, context.loc, MovingNodes);
@@ -227,18 +230,18 @@ const ViewRootDropStrategy = (View) => {
     
 }
 
-const ContainerDropStrategy = (View, Container, MovingNodes) => {
+const ContainerDropStrategy = (ViewRoot, Container, MovingNodes) => {
     return {
         async dragover(ide, context, payload) {
             const point = [payload.eventMeta.clientX, payload.eventMeta.clientY];
-            const nodePaths = Container.getChildren().filter(n => !MovingNodes.includes(n)).map(c => c.nodePath);
-            const direction = Container.elementMeta?.direction || CONTAINER_DIRECTION.AUTO;
+            const nodePaths = Container.elements.filter(n => !MovingNodes.includes(n)).map(c => c.nodePath);
+            const direction = Container?.direction || CONTAINER_DIRECTION.AUTO;
             if(nodePaths.length > 0) {
                 await normalPreDrop(ide, Container, context, point, nodePaths, direction)
             }
         },
         drop(ide, context, MovingNodes, callback) {
-            const node = getNodeByNodePath(View, context.nodePath);
+            const node = getNodeByNodePath(ViewRoot, context.nodePath);
             if(node) {
                 beforeDrop(MovingNodes);
                 normalInsertNodes(node, context.loc, MovingNodes)
@@ -251,7 +254,7 @@ const ContainerDropStrategy = (View, Container, MovingNodes) => {
     }
 }
 
-const AbsoluteDropStrategy = (View, Container, MovingNodes) => {
+const AbsoluteDropStrategy = (ViewRoot, Container, MovingNodes) => {
     return {
         async dragover(ide, context, payload) {
             context.nodePath = Container.nodePath;
@@ -260,7 +263,7 @@ const AbsoluteDropStrategy = (View, Container, MovingNodes) => {
             ide.surface.highlightEmptySlot(false)
             ide.highlightNodeByNodePath(Container.nodePath);
            /* if(context.fromNodePath) {
-                const dragNode = getNodeByNodePath(View, context.fromNodePath);
+                const dragNode = getNodeByNodePath(ViewRoot, context.fromNodePath);
                 if(dragNode.parentNode === Container) {
                     const payload = {
                         temporaryStyles: [],
@@ -293,7 +296,7 @@ const AbsoluteDropStrategy = (View, Container, MovingNodes) => {
             }*/
         },
         async drop(ide, context, MovingNodes, callback) {
-            const containerNode = getNodeByNodePath(View, context.nodePath);
+            const containerNode = getNodeByNodePath(ViewRoot, context.nodePath);
             if(containerNode) {
                 const movingNodeInfos = context.movingNodeInfos;
                 const containerInfo = await ide.getElementInfoByNodePath(context.nodePath)
@@ -336,36 +339,36 @@ const AbsoluteDropStrategy = (View, Container, MovingNodes) => {
 }
 
 
-export function chooseStrategy(payload, View, MovingNodes) {
+export function chooseStrategy(payload, ViewRoot, MovingNodes) {
     if(payload.notAllowed){
         return NotAllowedStrategy;
     }
     if(payload.inFrame) {
         const elementInfo = payload.elementInfo;
         if(elementInfo?.isEmptySlot) {
-            return EmptySlotStrategy(View);
+            return EmptySlotStrategy(ViewRoot);
         }
         if(elementInfo?.target) {
-            const node = getNodeByNodePath(View, elementInfo.target);
+            const node = getNodeByNodePath(ViewRoot, elementInfo.target);
             if(node) {
-                const containerNode = node.elementMeta.isContainer ? node : node.parentNode;
-                if(!containerNode.elementMeta) {
-                    return ViewRootDropStrategy(View);
+                const containerNode = node.isContainer ? node : node.parentNode;
+                if(containerNode.isRoot) {
+                    return ViewRootDropStrategy(ViewRoot);
                 }
-                if(containerNode?.elementMeta?.isAbsolute) {
-                    return AbsoluteDropStrategy(View, containerNode, MovingNodes);
+                if(containerNode?.isAbsolute) {
+                    return AbsoluteDropStrategy(ViewRoot, containerNode, MovingNodes);
                 }      
-                return ContainerDropStrategy(View, containerNode, MovingNodes);
+                return ContainerDropStrategy(ViewRoot, containerNode, MovingNodes);
             }
         } else {
-            return ViewRootDropStrategy(View);
+            return ViewRootDropStrategy(ViewRoot);
         }
 
 
     }
 }
 
-function AbsoluteDragStartStrategy(View, elementInfo, eventMeta) {
+function AbsoluteDragStartStrategy(ViewRoot, elementInfo, eventMeta) {
     return async (ide, context, MovingNodes) => {
         const movingNodePaths = MovingNodes.map(n => n.nodePath)
         context.fromCoord = [eventMeta.clientX, eventMeta.clientY];
@@ -374,7 +377,7 @@ function AbsoluteDragStartStrategy(View, elementInfo, eventMeta) {
         const infos = await ide.getElementsInfoByNodePath(movingNodePaths);
         context.movingNodeInfos = infos;
 
-        const dragNode = getNodeByNodePath(View, elementInfo.target);
+        const dragNode = getNodeByNodePath(ViewRoot, elementInfo.target);
         const Container = dragNode.parentNode;
         const payload = {
             nodePaths: [],
@@ -393,13 +396,13 @@ function AbsoluteDragStartStrategy(View, elementInfo, eventMeta) {
     
 }
 
-export function dragStartStrategy(View, elementInfo, eventMeta) {
+export function dragStartStrategy(ViewRoot, elementInfo, eventMeta) {
     if(elementInfo?.target) {
-        const node = getNodeByNodePath(View, elementInfo.target);
+        const node = getNodeByNodePath(ViewRoot, elementInfo.target);
         if(node) {
             const containerNode = node.parentNode;
-            if(containerNode?.elementMeta?.isAbsolute) {
-                return AbsoluteDragStartStrategy(View, elementInfo, eventMeta)
+            if(containerNode?.isAbsolute) {
+                return AbsoluteDragStartStrategy(ViewRoot, elementInfo, eventMeta)
             }
         }
     }
