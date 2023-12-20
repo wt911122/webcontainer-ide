@@ -5,9 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Vite App</title>
     <style>
-        #app { 
+        .app { 
             display: block;
-            width: 800px;
             height: 600px;
             overflow: auto;
             border: 1px solid black;
@@ -23,16 +22,37 @@
           cursor: pointer;
           user-select: none; 
         }
+        .designers{
+          width: 100%;
+          display: flex;
+          flex-direction: row;
+        }
+        .designer{
+          flex: 1;
+          padding: 5px;
+        }
     </style>
-    <script type="module" crossorigin src="/webcontainer-ide/assets/index-f2a93b81.js"></script>
-    <link rel="stylesheet" href="/webcontainer-ide/assets/index-af256636.css">
+    <script type="module" crossorigin src="/webcontainer-ide/assets/index-fce5a9a6.js"></script>
+    <link rel="stylesheet" href="/webcontainer-ide/assets/index-589ce01b.css">
   </head>
   <body>
-    <div class="panel">
-      <div id="button" class="button">Button</div>
-      <div id="Flex" class="button">Flex</div>
+    <div class="designers">
+      <div class="designer">
+        <div class="panel">
+          <div id="react-button" class="button">react-Button</div>
+          <div id="react-Flex" class="button">react-Flex</div>
+        </div>
+        <div class="app" id="react-app"></div>
+      </div>
+      <div class="designer">
+        <div class="panel">
+          <div id="vue-button" class="button">vue-Button</div>
+          <div id="vue-linear-layout" class="button">vue-Flex</div>
+          </div>
+        <div class="app" id="vue-app"></div>
+      </div>
+     
     </div>
-    <div id="app"></div>
     
   </body>
 </html>
