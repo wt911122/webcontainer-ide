@@ -24,9 +24,11 @@ class CodeSandBoxSimulator extends Simulator {
         //     }
         // })
     }
-
-    async updateProject(path, content) {
-        this.project.files['/' + path] = { code: content };
+    mutateContentInTemplateBeforeLoad(content) {
+        this.project.files[this.filePath] = { code: content };
+    }
+    async updateProject(content) {
+        this.project.files[this.filePath] = { code: content };
         this.client.updateSandbox(this.project);
     }
 }

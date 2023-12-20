@@ -8,7 +8,6 @@
                 {
                     "concept": "ViewElement",
                     "tag": "u-button",
-                    "innerText": "button1",
                     "bindAttrs": [
                         {
                             "concept": "BindAttribute",
@@ -16,6 +15,29 @@
                             "value": "Button1"
                         }
                     ]
+                }
+            ]
+        },
+        {
+            "concept": "ViewElement",
+            "tag": "AbsoluteLayout",
+            "children": [
+                {
+                    "concept": "ViewElement",
+                    "tag": "u-button",
+                    "bindAttrs": [
+                        {
+                            "concept": "BindAttribute",
+                            "name": "type",
+                            "value": "primary"
+                        },
+                        {
+                            "concept": "BindAttribute",
+                            "name": "text",
+                            "value": "Button2"
+                        }
+                    ],
+                    "staticStyle": "left: 20px; top: 20px;"
                 }
             ]
         }

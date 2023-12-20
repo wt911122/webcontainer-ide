@@ -58,9 +58,15 @@ class WebContainerSimulator extends Simulator {
             iframe.src = url;
         });
     }
-
-    async updateProject(path, content) {
-        await this.webcontainer.fs.writeFile(path, content);
+    mutateContentInTemplateBeforeLoad(content) {
+        this.project.src.directory['App.jsx'] = {
+            file: {
+                contents: content
+            }
+        }
+    }
+    async updateProject(content) {
+        await this.webcontainer.fs.writeFile(this.filePath, content);
     }
 }
 

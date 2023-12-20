@@ -1,7 +1,8 @@
 export class Simulator extends EventTarget {
-    constructor(project) {
+    constructor(project, filePath) {
         super();
         this.project = project;
+        this.filePath = filePath;
     }
 
     async load(iframe) {
@@ -11,6 +12,8 @@ export class Simulator extends EventTarget {
     async launch() {
         this.dispatchEvent(new CustomEvent('simulator:ready'))
     }
+
+    mutateContentInTemplateBeforeLoad(content) {}
 
     async updateProject() {}
 }

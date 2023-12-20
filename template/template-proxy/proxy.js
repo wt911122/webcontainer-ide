@@ -132,10 +132,11 @@ function resolveEvent(e) {
     ])
 }
 
+
 window.addEventListener('wheel', (e) => {
-    if(e.ctrlKey) { 
+    // if(e.ctrlKey) { 
         e.preventDefault();
-    } 
+    // } 
     postMessageToIDE({
         type: 'Event',
         name: 'wheel',
@@ -596,6 +597,7 @@ const methods = {
     startObserveRootNodeSize(payload) { 
         const elem = document.querySelector(payload.selector);
         if(elem) {
+            console.log(elem)
             observer.observe(elem);
         }
     },

@@ -1,9 +1,7 @@
 import { Element, Container, CONTAINER_DIRECTION } from './base';
-import { CSSInlineStyleToObjectString } from '../utils';
 
-class AntdElement extends Element {
-    renderIDE(refComps) {
-        refComps.add(this.tag);
+class CloudElement extends Element {
+    renderIDE() {
         let compCode = `
     <${this.tag} 
         key="${this.componentKey}" 
@@ -11,15 +9,12 @@ class AntdElement extends Element {
         ${bindAttributeToIDE(this.source.bindAttrs)}
         ${staticStyleToIDE(this.source.staticStyle)}>`;
 
-        if(this.innerText) {
-            compCode += this.innerText;
-        }
         compCode += `</${this.tag}>\n`;
         return compCode;
     } 
 }
 
-class AntdContainer extends Container {
+class CloudContainer extends Container {
     createSubElements(source) {
         let children;
         if(source.concept === 'View') {
@@ -33,8 +28,7 @@ class AntdContainer extends Container {
         }
     }
 
-    renderIDE(refComps) {
-        refComps.add(this.tag);
+    renderIDE() {
         let compCode = `
     <${this.tag} key="${this.componentKey}" 
         nodepath="${this.nodePath}" 
@@ -43,7 +37,7 @@ class AntdContainer extends Container {
         ${staticStyleToIDE(this.source.staticStyle)}>`;
         if(this.elements.length > 0) {
             this.elements.forEach(el => {
-                compCode += el.renderIDE(refComps);
+                compCode += el.renderIDE();
             });
         } else {
             compCode += `<EmptySlot />`
@@ -54,8 +48,8 @@ class AntdContainer extends Container {
 }
  
 
-const EDITABLE_ELEMENT = ['Button'];
-class EditableElemet extends AntdElement {
+const EDITABLE_ELEMENT = ['u-button'];
+class EditableElemet extends CloudElement {
     supportEditContent = true;
     static accept(source) {
         return EDITABLE_ELEMENT.includes(source.tag);
@@ -63,70 +57,64 @@ class EditableElemet extends AntdElement {
 }
 
 
-export class Root extends AntdContainer {
+export class Root extends CloudContainer {
     isRoot = true;
     renderIDE() {
-        const refComps = new Set();
         let comps = '';
         this.elements.forEach(el => {
-            comps += el.renderIDE(refComps);
+            comps += el.renderIDE();
         });
-
-        let refCompCodes = '';
-        if(refComps.size > 0) {
-            refCompCodes = 'import { '
-            refCompCodes += Array.from(refComps).join(',');
-            refCompCodes += '} from "antd";'
-        }
         const file = `
-import React from 'react';
-import EmptySlot from './Empty.jsx'
-${refCompCodes}
-function View() {
-    return (
-        <>
+        <template>
+            <div id="root">
             ${comps}
-        </>
-    )
-}
-export default View;
-`
+            </div>
+        </template>
+        <script>
+        import EmptySlot from './Empty.vue'
+        export default {
+            components: {
+                EmptySlot
+            }
+        }
+        </script>
+                `
         return file;
     }
     
 }
 
-class FlexContainer extends AntdContainer {
+class LinearLayoutContainer extends CloudContainer {
     static accept(source) {
-        return source.tag === 'Flex'
+        return source.tag === 'u-linear-layout'
     }
 
     constructor(source) {
         super(source);
         this.direction = CONTAINER_DIRECTION.ROW;
-        if(source.bindAttrs.find(attr => attr.name === 'vertical' && attr.value === 'true')) {
+        if(source.bindAttrs.find(attr => attr.name === 'direction' && attr.value === 'vertical')) {
             this.direction = CONTAINER_DIRECTION.COLUMN;
         }
     } 
 }
 
-class AbsoluteContainer extends AntdContainer {
+class AbsoluteContainer extends CloudContainer {
     isAbsolute = true;
 
     static accept(source) {
         return source.tag === 'AbsoluteLayout'
     }
 
-    renderIDE(refComps) {
+    renderIDE() {
         let compCode = `
     <div key="${this.componentKey}" 
         nodepath="${this.nodePath}" 
-        className="absoluteLayout" 
+        class="absoluteLayout" 
         ${bindAttributeToIDE(this.source.bindAttrs)}
         ${staticStyleToIDE(this.source.staticStyle)}>`;
         if(this.elements.length > 0) {
             this.elements.forEach(el => {
-                compCode += el.renderIDE(refComps);
+                compCode += el.renderIDE();
             });
         }
         compCode += `</div>\n`;
@@ -143,10 +131,7 @@ function bindAttributeToIDE(bindAttrs) {
 
 function staticStyleToIDE(staticStyle) {
     if(staticStyle && staticStyle.trim()) {
-        const style = CSSInlineStyleToObjectString(staticStyle.trim());
-        if(style) {
-            return ` style={${style}} `;
-        }
+        return ` style="${staticStyle.trim()}" `;
     }
     return '';
 }
@@ -154,9 +139,9 @@ function staticStyleToIDE(staticStyle) {
 
 const ViewElementClass = [
     AbsoluteContainer,
-    FlexContainer,
+    LinearLayoutContainer,
     EditableElemet,
-    AntdElement
+    CloudElement
 ]
 
 function makeUIElement(source) {

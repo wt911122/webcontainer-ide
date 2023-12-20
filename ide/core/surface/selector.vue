@@ -83,5 +83,7 @@ export default {
     color: white;
     line-height: 18px;
     font-size: 16px;
+    width: max-content;
+    padding: 5px;
 }
 </style>

@@ -1,6 +1,7 @@
 // import Previewer from './previewer/previewer';
 import { makeElement, transformAttr } from './core/utils';
 import Surface from './core/surface';
+import MessageCenter from './core/message-center';
 
 const SIMULATOR_PADDING = 30;
 // let id = 0;
@@ -100,7 +101,8 @@ class IDE extends EventTarget {
         dom.appendChild(viewport);
         iframe.addEventListener('load', () => {
             console.log('onload!')
-            window.addEventListener('message', (event) => {
+            MessageCenter.registIDE(this, iframe);
+           /* window.addEventListener('message', (event) => {
                 const data = event.data;
                 if(!ready && data.type === 'Event' && data.name === 'proxyReady') {
                     const source = event.source;
@@ -116,14 +118,128 @@ class IDE extends EventTarget {
                     })); 
                     ready = true;   
                 }
-            })
+            })*/
         })
         viewcontent.style.height = `${viewport.getBoundingClientRect().height}px`
         this.simulator.load(iframe)
         // this.previewer.load();
     }
 
-    _init() {
+    init(postIframeMessage) {
+        this.postIframeMessage = postIframeMessage;
+        const _frameResized = (payload) => {
+            console.log('resized!', this.simulator)
+            this.domCache.viewcontent.style.height = `${payload.scrollHeight}px`;
+        }
+
+        const wheelStriker = () => {
+            let strikerStack = [];
+            return (type, e) => {
+                if(type === 'wheel' && strikerStack.length === 3 && strikerStack.every(s => s === 'wheel')) {
+                    console.log('onWheel')
+                    this.onWheelInFrame(e);
+                }
+                strikerStack.unshift(type);
+                if(strikerStack.length > 3) {
+                    strikerStack.length = 3;
+                }
+            }
+        }
+        const _wheelHandlerInIframe = wheelStriker().bind(this);
+        
+        this.onMessage = (event) => {
+            const data = event.data;
+            if(data.type === 'Event') {
+                switch(data.name) {
+                    case 'wheel':
+                    case 'scroll':
+                        _wheelHandlerInIframe(data.name, data.payload.eventMeta);
+                        break;
+                    case 'dragstart':
+                        this.dispatchEvent(new CustomEvent('frame:dragstart', {
+                            detail: data.payload,
+                        }))
+                        break;
+                    case 'refreshBoundings': 
+                        this.refreshBoundings(data.payload);
+                        break;
+                    case 'mousemove': 
+                        this.highlightNode(data.payload.elementInfo);
+                        break;
+                    case 'dragover':
+                        this.dispatchEvent(new CustomEvent('frame:dragover', {
+                            detail: data.payload
+                        }))
+                        break;
+                    case 'dragend':
+                        this.dispatchEvent(new CustomEvent('frame:dragend', {
+                            detail: data.payload
+                        }))
+                        break;
+                    case 'hesitateWhenDragging':
+                        this.dispatchEvent(new CustomEvent('frame:hesitateWhenDragging', {
+                            detail: data.payload
+                        }))
+                        break;
+                    case 'click':
+                        this._focusOnNode(data.payload);
+                        break;
+                    case 'dblclick':
+                        this.dispatchEvent(new CustomEvent('frame:requestEditContent', {
+                            detail: data.payload
+                        }))
+                        break;
+                    case 'contentchange':
+                        this.dispatchEvent(new CustomEvent('frame:contentChange', {
+                            detail: data.payload
+                        }))
+                        break;
+                    case 'resizeObserver':
+                        _frameResized(data.payload);
+                        break;
+                }
+            }
+            if(data.type === 'Method') {
+                const method = this._registedMethods.get(data.name);
+                if(method) {
+                    const uuid = data.uuid;
+                    method((response) => {
+                        postIframeMessage({
+                            type: 'Response',
+                            result: 'success',
+                            uuid,
+                            response,
+                        }, event.origin)
+                    }, err => {
+                        postIframeMessage({
+                            type: 'Response',
+                            result: 'failed',
+                            uuid,
+                            err
+                        }, event.origin)
+                    }, data.payload);
+                }
+                
+            }
+        }
+
+        const viewport = this.domCache.viewport;
+        viewport.addEventListener('mousemove', (e) => {
+            if(e.target === viewport) {
+                this.surface.closeHighlightElem()
+            }
+        })
+        viewport.addEventListener("wheel", this.onWheelInViewport.bind(this), { passive: false });
+        this.surface.apply(this, this.domCache.groundAnchor);
+
+        this.dispatchEvent(new CustomEvent('ready', {
+            detail: {
+                target: this.iframe,
+            }
+        }));
+    }
+
+    /*_init() {
 
 
         const _frameResized = (payload) => {
@@ -247,7 +363,7 @@ class IDE extends EventTarget {
         })
         viewport.addEventListener("wheel", this.onWheelInViewport.bind(this), { passive: false });
         this.surface.apply(this, this.domCache.groundAnchor);
-    }
+    }*/
 
     preRegistMethods() {
 
@@ -324,17 +440,16 @@ class IDE extends EventTarget {
     }
 
     resolveEventOffsetToViewport(e) {
+        
         const { clientX, clientY } = e;
-        const r1 = this.domCache.viewcontent.getBoundingClientRect();
-        return [
-            clientX * this.scale + r1.x,
-            clientY * this.scale + r1.y,
-        ]
+        const p = [clientX, clientY];
+        this._calculateToViewport(p, p)
+        return p
     }
 
     onWheelInViewport(e) {
-        const [x, y] = this.resolveEventOffset(e);
         e.preventDefault();
+        const [x, y] = this.resolveEventOffset(e);
         this._onWheel(e.ctrlKey, e.deltaX, e.deltaY, x, y)
     }
 
