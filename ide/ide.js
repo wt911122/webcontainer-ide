@@ -229,6 +229,12 @@ class IDE extends EventTarget {
                 this.surface.closeHighlightElem()
             }
         })
+        viewport.addEventListener('click', (e) => {
+            if(e.target === viewport) {
+                this.surface.closeAll();
+                this.surface.setFocus();
+            }
+        })
         viewport.addEventListener("wheel", this.onWheelInViewport.bind(this), { passive: false });
         this.surface.apply(this, this.domCache.groundAnchor);
 
