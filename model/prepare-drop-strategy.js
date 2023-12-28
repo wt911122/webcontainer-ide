@@ -87,47 +87,57 @@ function beforeDrop(MovingNodes) {
     })
 }
 
-async function _prepareDrop(ide, Container, point, nodePaths, direction) {
+async function _prepareDrop(ide, Container, point, nodePaths, direction, MovingNodes) {
+    const innerDropable = !Container ||  MovingNodes.find(n => Container.dropable(n) && n.dropToAccept(Container));
     const info = await ide.getElementsInfoByNodePath(nodePaths);
     let { getSegs, shiftHighlighter } = SEGMENT_STATEGY[direction];
     let minDist = Infinity
     let nearestSeg;
     let nodepath;
     let loc;
+    
+    if(innerDropable) {
+        nodePaths.forEach(p => {
+            const rects = info[p].rects;
+            rects.forEach(box => {
+                const segs = getSegs(box, info[p]);
+                segs.forEach((seg, idx) => {
+                    const d = distToSegmentVecSquared(point, seg);
+                    if(d < minDist){
+                        minDist = d;
+                        nearestSeg = seg;
+                        nodepath = p
+                        loc = idx === 0 ? LOC.PRE : LOC.AFTER;
+                    }
+                })
+            });
+        });
+    }
 
-    nodePaths.forEach(p => {
-        const rects = info[p].rects;
-        rects.forEach(box => {
-            const segs = getSegs(box, info[p]);
+    if(Container) {
+        const ContainerPath = Container.nodePath;
+        const cParent = Container.parentNode;
+        const result = MovingNodes.find(n => cParent.dropable(n) && n.dropToAccept(cParent));
+        if(result) {
+            const cParentDirection = cParent.direction || CONTAINER_DIRECTION.AUTO;
+            const { getSegs, shiftHighlighter: containerShiftHighlighter } = SEGMENT_STATEGY[cParentDirection];
+            const containerInfo = await ide.getElementInfoByNodePath(ContainerPath)
+            const containerRect = containerInfo.rects[0];
+            const segs = getSegs(containerRect, containerInfo);
             segs.forEach((seg, idx) => {
                 const d = distToSegmentVecSquared(point, seg);
                 if(d < minDist){
                     minDist = d;
                     nearestSeg = seg;
-                    nodepath = p
+                    nodepath = ContainerPath
                     loc = idx === 0 ? LOC.PRE : LOC.AFTER;
+                    shiftHighlighter = containerShiftHighlighter;
                 }
             })
-        });
-    });
-
-    if(Container) {
-        const ContainerPath = Container.nodePath;
-        const cParentDirection = Container.parentNode.elementInfo?.direction || CONTAINER_DIRECTION.AUTO;
-        const { getSegs, shiftHighlighter: containerShiftHighlighter } = SEGMENT_STATEGY[cParentDirection];
-        const containerInfo = await ide.getElementInfoByNodePath(ContainerPath)
-        const containerRect = containerInfo.rects[0];
-        const segs = getSegs(containerRect, containerInfo);
-        segs.forEach((seg, idx) => {
-            const d = distToSegmentVecSquared(point, seg);
-            if(d < minDist){
-                minDist = d;
-                nearestSeg = seg;
-                nodepath = ContainerPath
-                loc = idx === 0 ? LOC.PRE : LOC.AFTER;
-                shiftHighlighter = containerShiftHighlighter;
-            }
-        })
+        }
+    }
+    if(!nearestSeg) {
+        throw 'can not drop!'
     }
 
     shiftHighlighter(nearestSeg, loc === LOC.PRE ? 1.5: -1.5);
@@ -177,25 +187,40 @@ const EmptySlotStrategy = (ViewRoot) => ({
     }
 })
 
-async function normalPreDrop(ide, Container, context, point, nodePaths, direction) {
-    const { nearestSeg, nodepath, loc } = await _prepareDrop(
-        ide,
-        Container,
-        point,
-        nodePaths,
-        direction,
-    );
-    
-    ide.surface.highlightSeg(true, nearestSeg);
-    ide.surface.highlightEmptySlot(false)
-    if(Container) {
-        ide.highlightNodeByNodePath(Container.nodePath);
-    } else {
-        ide.closeHighlight();
+async function normalPreDrop(ide, Container, context, point, nodePaths, direction, MovingNodes) {
+    try {
+        const { nearestSeg, nodepath, loc } = await _prepareDrop(
+            ide,
+            Container,
+            point,
+            nodePaths,
+            direction,
+            MovingNodes
+        );
+        
+        ide.surface.highlightSeg(true, nearestSeg);
+        ide.surface.highlightEmptySlot(false)
+        if(Container) {
+            ide.highlightNodeByNodePath(Container.nodePath);
+        } else {
+            ide.closeHighlight();
+        }
+        context.nodePath = nodepath;
+        context.loc = loc
+        ide.setCursorInFrame('copy');
+    } catch(err) {
+        ide.surface.highlightSeg(false);
+        ide.surface.highlightEmptySlot(false)
+        if(Container) {
+            ide.highlightNodeByNodePath(Container.nodePath);
+        } else {
+            ide.closeHighlight();
+        }
+        context.nodePath = '';
+        context.loc = ''
+        ide.setCursorInFrame('not-allowed');
+        
     }
-    context.nodePath = nodepath;
-    context.loc = loc
-    ide.setCursorInFrame('copy');
 }
 
 function normalInsertNodes(node, loc, newNodes) {
@@ -206,13 +231,13 @@ function normalInsertNodes(node, loc, newNodes) {
     }
 }
 
-const ViewRootDropStrategy = (ViewRoot) => {
+const ViewRootDropStrategy = (ViewRoot, Container, MovingNodes) => {
     return {
         async dragover(ide, context, payload) {
             const point = [payload.eventMeta.clientX, payload.eventMeta.clientY];
             const nodePaths = ViewRoot.elements.map(c => c.nodePath);
             if(nodePaths.length > 0) {
-                await normalPreDrop(ide, null, context, point, nodePaths, CONTAINER_DIRECTION.AUTO)
+                await normalPreDrop(ide, null, context, point, nodePaths, CONTAINER_DIRECTION.AUTO, MovingNodes)
             }
         },
         drop(ide, context, MovingNodes, callback) {
@@ -235,9 +260,11 @@ const ContainerDropStrategy = (ViewRoot, Container, MovingNodes) => {
         async dragover(ide, context, payload) {
             const point = [payload.eventMeta.clientX, payload.eventMeta.clientY];
             const nodePaths = Container.elements.filter(n => !MovingNodes.includes(n)).map(c => c.nodePath);
+            // console.log(nodePaths);
             const direction = Container?.direction || CONTAINER_DIRECTION.AUTO;
+            // console.log(Container);
             if(nodePaths.length > 0) {
-                await normalPreDrop(ide, Container, context, point, nodePaths, direction)
+                await normalPreDrop(ide, Container, context, point, nodePaths, direction, MovingNodes)
             }
         },
         drop(ide, context, MovingNodes, callback) {
@@ -257,10 +284,20 @@ const ContainerDropStrategy = (ViewRoot, Container, MovingNodes) => {
 const AbsoluteDropStrategy = (ViewRoot, Container, MovingNodes) => {
     return {
         async dragover(ide, context, payload) {
-            context.nodePath = Container.nodePath;
-            context.toCoord = [payload.eventMeta.clientX, payload.eventMeta.clientY]
-            ide.surface.highlightSeg(false);
-            ide.surface.highlightEmptySlot(false)
+            const innerDropable = MovingNodes.find(n => Container.dropable(n) && n.dropToAccept(Container));
+            if(innerDropable) {
+                context.nodePath = Container.nodePath;
+                context.toCoord = [payload.eventMeta.clientX, payload.eventMeta.clientY]
+                ide.surface.highlightSeg(false);
+                ide.surface.highlightEmptySlot(false)  
+                ide.setCursorInFrame('copy');
+            } else {
+                context.nodePath = '';
+                context.loc = ''
+                ide.surface.highlightSeg(false);
+                ide.surface.highlightEmptySlot(false)
+                ide.setCursorInFrame('not-allowed');
+            }
             ide.highlightNodeByNodePath(Container.nodePath);
            /* if(context.fromNodePath) {
                 const dragNode = getNodeByNodePath(ViewRoot, context.fromNodePath);
@@ -353,7 +390,7 @@ export function chooseStrategy(payload, ViewRoot, MovingNodes) {
             if(node) {
                 const containerNode = node.isContainer ? node : node.parentNode;
                 if(containerNode.isRoot) {
-                    return ViewRootDropStrategy(ViewRoot);
+                    return ViewRootDropStrategy(ViewRoot, containerNode, MovingNodes);
                 }
                 if(containerNode?.isAbsolute) {
                     return AbsoluteDropStrategy(ViewRoot, containerNode, MovingNodes);

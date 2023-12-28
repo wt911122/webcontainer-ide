@@ -1,6 +1,7 @@
 class BaseNode {
     concept = '';
     constructor(source) {
+        Object.assign(this, source)
         this.concept = source.concept;    
         this.tag = source.tag;
     }
@@ -107,6 +108,20 @@ export class ViewElement extends BaseNode {
     }
 }
 
+
+function parseIndentifier(exp) {
+    return exp.name
+}
+function parseMemberExp(exp) {
+    return `${parseExp(exp.object)}.${parseExp(exp.property)}`
+}
+function parseExp(exp) {
+    if(exp.object) {
+        return parseMemberExp(exp);
+    }
+    return parseIndentifier(exp);
+}
+
 class BindAttribute extends BaseNode {
     name = '';
     value = '';
@@ -115,5 +130,8 @@ class BindAttribute extends BaseNode {
         super(source);
         this.name = source.name;
         this.value = source.value;
+        if(source.expression) {
+            this.value = parseExp(source.expression);
+        }
     }
 }

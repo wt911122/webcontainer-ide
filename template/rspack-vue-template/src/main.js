@@ -5,6 +5,7 @@ import "cloud-ui.vusion/dist/index.css";
 import './proxy.js'
 import './ide.css'
 import './absolute.css'
+import './cloud-ide.css'
 
 Vue.use(CloudUI);
 Vue.config.productionTip = false;

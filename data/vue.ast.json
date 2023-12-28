@@ -40,6 +40,541 @@
                     "staticStyle": "left: 20px; top: 20px;"
                 }
             ]
+        },
+        {
+            "concept": "ViewElement",
+            "type": 0,
+            "tag": "u-table-view",
+            "name": "tableView",
+            "bindAttrs": [
+                {
+                    "concept": "BindAttribute",
+                    "name": "data-source",
+                    "type": "dynamic",
+                    "value": "",
+                    "expression": {
+                        "concept": "Identifier",
+                        "name": "load",
+                        "label": "",
+                        "folded": false
+                    },
+                    "rules": [],
+                    "model": false,
+                    "sync": false,
+                    "playground": []
+                },
+                {
+                    "concept": "BindAttribute",
+                    "name": "value-field",
+                    "type": "string",
+                    "value": "lCAPUserRoleMapping.id",
+                    "rules": [],
+                    "model": false,
+                    "sync": false,
+                    "playground": []
+                },
+                {
+                    "concept": "BindAttribute",
+                    "name": "show-total",
+                    "type": "static",
+                    "value": "true",
+                    "rules": [],
+                    "model": false,
+                    "sync": false,
+                    "playground": []
+                },
+                {
+                    "concept": "BindAttribute",
+                    "name": "pageable",
+                    "type": "string",
+                    "value": "",
+                    "rules": [],
+                    "model": false,
+                    "sync": false,
+                    "playground": []
+                },
+                {
+                    "concept": "BindAttribute",
+                    "name": "remote-paging",
+                    "type": "static",
+                    "value": "true",
+                    "rules": [],
+                    "model": false,
+                    "sync": false,
+                    "playground": []
+                }
+            ],
+            "bindEvents": [],
+            "bindDirectives": [],
+            "bindRoles": [],
+            "bindStyles": [],
+            "children": [
+                {
+                    "concept": "ViewElement",
+                    "type": 0,
+                    "tag": "u-table-view-column",
+                    "name": "uTableViewColumn1",
+                    "bindAttrs": [
+                        {
+                            "concept": "BindAttribute",
+                            "name": "type",
+                            "type": "string",
+                            "value": "index",
+                            "rules": [],
+                            "model": false,
+                            "sync": false,
+                            "playground": []
+                        },
+                        {
+                            "concept": "BindAttribute",
+                            "name": "width",
+                            "type": "string",
+                            "value": "60",
+                            "rules": [],
+                            "model": false,
+                            "sync": false,
+                            "playground": []
+                        }
+                    ],
+                    "bindEvents": [],
+                    "bindDirectives": [],
+                    "bindRoles": [],
+                    "bindStyles": [],
+                    "children": [
+                        {
+                            "concept": "ViewElement",
+                            "tag": "template",
+                            "name": "template6",
+                            "slotTarget": "title",
+                            "slotScope": "",
+                            "bindAttrs": [],
+                            "bindEvents": [],
+                            "bindDirectives": [],
+                            "bindRoles": [],
+                            "bindStyles": [],
+                            "children": [
+                                {
+                                    "concept": "ViewElement",
+                                    "tag": "u-text",
+                                    "name": "text1",
+                                    "bindAttrs": [
+                                        {
+                                            "concept": "BindAttribute",
+                                            "name": "text",
+                                            "type": "string",
+                                            "value": "序号",
+                                            "rules": [],
+                                            "playground": []
+                                        }
+                                    ],
+                                    "bindEvents": [],
+                                    "bindDirectives": [],
+                                    "bindRoles": [],
+                                    "bindStyles": [],
+                                    "children": []
+                                }
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "concept": "ViewElement",
+                    "type": 0,
+                    "tag": "u-table-view-column",
+                    "name": "uTableViewColumn2",
+                    "bindAttrs": [
+                        {
+                            "concept": "BindAttribute",
+                            "name": "type",
+                            "type": "string",
+                            "value": "expander",
+                            "rules": [],
+                            "playground": []
+                        }
+                    ],
+                    "bindEvents": [],
+                    "bindDirectives": [],
+                    "bindRoles": [],
+                    "bindStyles": [],
+                    "children": [
+                        {
+                            "concept": "ViewElement",
+                            "type": 0,
+                            "tag": "template",
+                            "name": "template4",
+                            "slotTarget": "cell",
+                            "slotScope": "current",
+                            "bindAttrs": [],
+                            "bindEvents": [],
+                            "bindDirectives": [],
+                            "bindRoles": [],
+                            "bindStyles": [],
+                            "children": [
+                                {
+                                    "concept": "ViewElement",
+                                    "type": 0,
+                                    "tag": "u-linear-layout",
+                                    "name": "uLinearLayout4",
+                                    "bindAttrs": [
+                                        {
+                                            "concept": "BindAttribute",
+                                            "name": "gap",
+                                            "type": "string",
+                                            "value": "small",
+                                            "rules": [],
+                                            "model": false,
+                                            "sync": false,
+                                            "playground": []
+                                        }
+                                    ],
+                                    "bindEvents": [],
+                                    "bindDirectives": [],
+                                    "bindRoles": [],
+                                    "bindStyles": [],
+                                    "children": [
+                                        {
+                                            "concept": "ViewElement",
+                                            "type": 0,
+                                            "tag": "u-text",
+                                            "name": "uText2",
+                                            "bindAttrs": [
+                                                {
+                                                    "concept": "BindAttribute",
+                                                    "name": "text",
+                                                    "type": "dynamic",
+                                                    "value": "",
+                                                    "expression": {
+                                                        "concept": "MemberExpression",
+                                                        "object": {
+                                                            "concept": "MemberExpression",
+                                                            "object": {
+                                                                "concept": "MemberExpression",
+                                                                "object": {
+                                                                    "concept": "Identifier",
+                                                                    "name": "current",
+                                                                    "label": "",
+                                                                    "folded": false
+                                                                },
+                                                                "property": {
+                                                                    "concept": "Identifier",
+                                                                    "name": "item",
+                                                                    "label": "",
+                                                                    "folded": false
+                                                                },
+                                                                "label": "",
+                                                                "folded": false,
+                                                                "name": ""
+                                                            },
+                                                            "property": {
+                                                                "concept": "Identifier",
+                                                                "name": "lCAPUserRoleMapping",
+                                                                "label": "",
+                                                                "folded": false
+                                                            },
+                                                            "label": "",
+                                                            "folded": false,
+                                                            "name": ""
+                                                        },
+                                                        "property": {
+                                                            "concept": "Identifier",
+                                                            "name": "userName",
+                                                            "label": "",
+                                                            "folded": false
+                                                        },
+                                                        "label": "",
+                                                        "folded": false,
+                                                        "name": ""
+                                                    },
+                                                    "rules": [],
+                                                    "model": false,
+                                                    "sync": false,
+                                                    "playground": []
+                                                }
+                                            ],
+                                            "bindEvents": [],
+                                            "bindDirectives": [],
+                                            "bindRoles": [],
+                                            "bindStyles": [],
+                                            "children": []
+                                        }
+                                    ]
+                                }
+                            ]
+                        },
+                        {
+                            "concept": "ViewElement",
+                            "tag": "template",
+                            "name": "template7",
+                            "slotTarget": "title",
+                            "slotScope": "",
+                            "bindAttrs": [],
+                            "bindEvents": [],
+                            "bindDirectives": [],
+                            "bindRoles": [],
+                            "bindStyles": [],
+                            "children": [
+                                {
+                                    "concept": "ViewElement",
+                                    "tag": "u-text",
+                                    "name": "text2",
+                                    "bindAttrs": [
+                                        {
+                                            "concept": "BindAttribute",
+                                            "name": "text",
+                                            "type": "string",
+                                            "value": "用户名",
+                                            "rules": [],
+                                            "playground": []
+                                        }
+                                    ],
+                                    "bindEvents": [],
+                                    "bindDirectives": [],
+                                    "bindRoles": [],
+                                    "bindStyles": [],
+                                    "children": []
+                                }
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "concept": "ViewElement",
+                    "type": 0,
+                    "tag": "u-table-view-column",
+                    "name": "uTableViewColumn3",
+                    "bindAttrs": [],
+                    "bindEvents": [],
+                    "bindDirectives": [],
+                    "bindRoles": [],
+                    "bindStyles": [],
+                    "children": [
+                        {
+                            "concept": "ViewElement",
+                            "type": 0,
+                            "tag": "template",
+                            "name": "template5",
+                            "slotTarget": "cell",
+                            "slotScope": "current",
+                            "bindAttrs": [],
+                            "bindEvents": [],
+                            "bindDirectives": [],
+                            "bindRoles": [],
+                            "bindStyles": [],
+                            "children": [
+                                {
+                                    "concept": "ViewElement",
+                                    "type": 0,
+                                    "tag": "u-linear-layout",
+                                    "name": "uLinearLayout5",
+                                    "bindAttrs": [
+                                        {
+                                            "concept": "BindAttribute",
+                                            "name": "gap",
+                                            "type": "string",
+                                            "value": "small",
+                                            "rules": [],
+                                            "model": false,
+                                            "sync": false,
+                                            "playground": []
+                                        }
+                                    ],
+                                    "bindEvents": [],
+                                    "bindDirectives": [],
+                                    "bindRoles": [],
+                                    "bindStyles": [],
+                                    "children": [
+                                        {
+                                            "concept": "ViewElement",
+                                            "type": 0,
+                                            "tag": "u-link",
+                                            "name": "uLink1",
+                                            "bindAttrs": [
+                                                {
+                                                    "concept": "BindAttribute",
+                                                    "name": "text",
+                                                    "type": "string",
+                                                    "value": "移除 ",
+                                                    "rules": [],
+                                                    "model": false,
+                                                    "sync": false,
+                                                    "playground": []
+                                                }
+                                            ],
+                                            "bindEvents": [
+                                                {
+                                                    "concept": "BindEvent",
+                                                    "name": "click",
+                                                    "logics": [
+                                                        {
+                                                            "concept": "Logic",
+                                                            "name": "remove",
+                                                            "typeParams": null,
+                                                            "params": [],
+                                                            "returns": [],
+                                                            "variables": [],
+                                                            "body": [
+                                                                {
+                                                                    "concept": "Start",
+                                                                    "label": "开始",
+                                                                    "folded": false,
+                                                                    "name": ""
+                                                                },
+                                                                {
+                                                                    "uuid": "f639b13331354c5b82c034355e590564",
+                                                                    "concept": "CallLogic",
+                                                                    "label": "调用逻辑",
+                                                                    "calleeNamespace": "app.dataSources.defaultDS.entities.LCAPUserRoleMapping.logics",
+                                                                    "calleeName": "delete",
+                                                                    "typeArguments": null,
+                                                                    "arguments": [
+                                                                        {
+                                                                            "concept": "Argument",
+                                                                            "keyword": "id",
+                                                                            "expression": {
+                                                                                "concept": "MemberExpression",
+                                                                                "object": {
+                                                                                    "concept": "MemberExpression",
+                                                                                    "object": {
+                                                                                        "concept": "MemberExpression",
+                                                                                        "object": {
+                                                                                            "concept": "Identifier",
+                                                                                            "name": "current",
+                                                                                            "label": "",
+                                                                                            "folded": false
+                                                                                        },
+                                                                                        "property": {
+                                                                                            "concept": "Identifier",
+                                                                                            "name": "item",
+                                                                                            "label": "",
+                                                                                            "folded": false
+                                                                                        },
+                                                                                        "label": "",
+                                                                                        "folded": false,
+                                                                                        "name": ""
+                                                                                    },
+                                                                                    "property": {
+                                                                                        "concept": "Identifier",
+                                                                                        "name": "lCAPUserRoleMapping",
+                                                                                        "label": "",
+                                                                                        "folded": false
+                                                                                    },
+                                                                                    "label": "",
+                                                                                    "folded": false,
+                                                                                    "name": ""
+                                                                                },
+                                                                                "property": {
+                                                                                    "concept": "Identifier",
+                                                                                    "name": "id",
+                                                                                    "label": "",
+                                                                                    "folded": false
+                                                                                },
+                                                                                "label": "",
+                                                                                "folded": false,
+                                                                                "name": ""
+                                                                            },
+                                                                            "folded": false,
+                                                                            "name": ""
+                                                                        }
+                                                                    ],
+                                                                    "folded": false,
+                                                                    "name": ""
+                                                                },
+                                                                {
+                                                                    "uuid": "7998aba64d1d49abb58f392dba7cdb20",
+                                                                    "concept": "CallLogic",
+                                                                    "label": "调用逻辑",
+                                                                    "calleeNamespace": "elements.tableView.logics",
+                                                                    "calleeName": "reload",
+                                                                    "typeArguments": null,
+                                                                    "arguments": [],
+                                                                    "folded": false,
+                                                                    "name": ""
+                                                                },
+                                                                {
+                                                                    "uuid": "7d210e3bc12a4bc28dcd80ab2a02e312",
+                                                                    "concept": "CallLogic",
+                                                                    "label": "弹出消息",
+                                                                    "calleeNamespace": "nasl.ui",
+                                                                    "calleeName": "showMessage",
+                                                                    "shortcut": true,
+                                                                    "typeArguments": null,
+                                                                    "arguments": [
+                                                                        {
+                                                                            "concept": "Argument",
+                                                                            "keyword": "text",
+                                                                            "expression": {
+                                                                                "concept": "StringLiteral",
+                                                                                "value": "移除成功！",
+                                                                                "label": "",
+                                                                                "folded": false,
+                                                                                "name": ""
+                                                                            },
+                                                                            "folded": false,
+                                                                            "name": ""
+                                                                        }
+                                                                    ],
+                                                                    "folded": false,
+                                                                    "name": ""
+                                                                },
+                                                                {
+                                                                    "concept": "End",
+                                                                    "label": "结束",
+                                                                    "folded": false,
+                                                                    "name": ""
+                                                                }
+                                                            ],
+                                                            "playground": []
+                                                        }
+                                                    ],
+                                                    "arguments": []
+                                                }
+                                            ],
+                                            "bindDirectives": [],
+                                            "bindRoles": [],
+                                            "bindStyles": [],
+                                            "children": []
+                                        }
+                                    ]
+                                }
+                            ]
+                        },
+                        {
+                            "concept": "ViewElement",
+                            "tag": "template",
+                            "name": "template8",
+                            "slotTarget": "title",
+                            "slotScope": "",
+                            "bindAttrs": [],
+                            "bindEvents": [],
+                            "bindDirectives": [],
+                            "bindRoles": [],
+                            "bindStyles": [],
+                            "children": [
+                                {
+                                    "concept": "ViewElement",
+                                    "tag": "u-text",
+                                    "name": "text3",
+                                    "bindAttrs": [
+                                        {
+                                            "concept": "BindAttribute",
+                                            "name": "text",
+                                            "type": "string",
+                                            "value": "操作",
+                                            "rules": [],
+                                            "playground": []
+                                        }
+                                    ],
+                                    "bindEvents": [],
+                                    "bindDirectives": [],
+                                    "bindRoles": [],
+                                    "bindStyles": [],
+                                    "children": []
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
         }
     ]
 }

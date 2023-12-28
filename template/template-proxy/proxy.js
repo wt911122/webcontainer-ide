@@ -83,6 +83,17 @@ function lockTarget(e) {
     }
     return null;
 }
+function lockTargetWithNodePath(e) {
+    status.mouseCurrentLocation[0] = e.clientX;
+    status.mouseCurrentLocation[1] = e.clientY;
+    const domtree = document.elementsFromPoint(e.clientX, e.clientY);
+    const element = domtree.find(elem => elem.hasAttribute('nodepath'));
+    
+    if(element) {
+        return element
+    }
+    return null;
+}
 
 
 function findParentWithNodePath(elem) {
@@ -170,21 +181,26 @@ function prepareElementTransferInfomation(element) {
     };
     if(element) {
         if(element.hasAttribute('emptyslot')) {
-            const elem = findParentWithNodePath(element);
+            let elem = element;
+            if(!elem.hasAttribute('nodepath')) {
+                elem = findParentWithNodePath(element);
+            }
             const target = elem.getAttribute('nodepath');
-            payload.rects = Array.from(element.getClientRects());
+            payload.rects = Array.from(elem.getClientRects());
             payload.target = target;
             payload.isEmptySlot = true;
-        } 
-        if(element.hasAttribute('nodepath')) {
+        } else if(element.hasAttribute('nodepath')) {
             // const box = element.getBoundingClientRect();
             payload.target = element.getAttribute('nodepath');
+            // const elems = Array.from(document.querySelectorAll(`[nodepath="${payload.target}"]`));
             // payload.boundingbox = box;
             payload.elemStyle = {
                 inline: isElementInline(element),
             }
-            const rects = element.getClientRects();
-            payload.rects = Array.from(rects);
+            
+            // const rects = elems.map(el => Array.from(el.getClientRects())).flat()
+            const rects = Array.from(element.getClientRects());
+            payload.rects = rects;
         }
     }
     return payload;
@@ -206,8 +222,11 @@ window.addEventListener('mousedown', (e) => {
     e.preventDefault();
     e.stopPropagation();
     status.mouseDownPosition = point
-    const element = lockTarget(e);
+    const element = lockTargetWithNodePath(e);
     if(element) {
+        if(element.getAttribute('ide-draggable') === 'false') {
+            return;
+        }
         let p = [e.clientX, e.clientY]
         let _d = 0;
         const f = (e) => {

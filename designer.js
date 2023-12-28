@@ -27,9 +27,12 @@ export function launch({
     function getNodeByNodePath(nodepath) {
         return getUINodeByNodePath(ideModel.getRoot(), nodepath)
     }
+    window.getNodeByNodePath = getNodeByNodePath;
 
     const simulator = new Simulator(template, filePath);
-    simulator.mutateContentInTemplateBeforeLoad(ideModel.genCode());
+    const content = ideModel.genCode();
+    console.log(content);
+    simulator.mutateContentInTemplateBeforeLoad(content);
   
 
     function writeFile() {
@@ -102,6 +105,7 @@ export function launch({
         if(isOnFocus) {
             MovingNodes = ide.surface.getFocusNodes();
         }
+        MovingNodes = MovingNodes.filter(node => node.draggable)
         // resolve Drag element
         const DragNode = document.createElement('div');
         DragNode.innerText = MovingNode.tag;

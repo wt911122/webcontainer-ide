@@ -1,7 +1,7 @@
 // import { makeElement } from './utils';
 import { createApp, reactive, h, toRaw, provide } from 'vue'
 import SurfaceElem from './surface.vue';
-
+import { calcPolygonPath } from './polygon';
 
 class Surface {
     targets = reactive([]);
@@ -137,8 +137,11 @@ class Surface {
             return {
                 position: [x * scale, y * scale],
                 polygonPath,
-                viewbox: bounding_box(polygonPath)
+                viewbox: bounding_box(polygonPath),
             }
+        } else {
+            const anchor = [rects[0].x, rects[0].y]
+            return transformPolygon(anchor, scale, calcPolygonPath(rects));
         }
     }
 
@@ -213,6 +216,21 @@ export default Surface;
 
 function _isSameTarget(a, b) {
     return toRaw(a) === toRaw(b)
+}
+
+function transformPolygon(anchor, scale, polygon) {
+    const l = polygon.length;
+    let i = 0;
+    while(i<l) {
+        polygon[i] = (polygon[i]-anchor[0])*scale
+        polygon[i+1] = (polygon[i+1]-anchor[1])*scale
+        i+=2
+    }
+    return {
+        position: [anchor[0] * scale, anchor[1] * scale],
+        polygonPath: polygon,
+        viewbox: bounding_box(polygon),
+    }
 }
 
 export function bounding_box(points) {

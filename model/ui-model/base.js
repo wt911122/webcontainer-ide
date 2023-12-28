@@ -7,7 +7,9 @@ export class Element {
     parentNode = null;
     tag = '';
     isContainer = false;
-    supportEditContent = false;
+    supportEditContent = false; // 是否可以编辑
+    draggable = true;           // 是否可拖拽
+
 
     get staticStyle() {
         return this.source.staticStyle;
@@ -40,6 +42,8 @@ export class Element {
         return `${parentNode.nodePath}.${idx}`;
     }
 
+
+
     constructor(source) {
         this.source = source;
         this.tag = source.tag;
@@ -55,6 +59,9 @@ export class Element {
         throw 'renderIDE need implementation!'
     }  
     
+    dropToAccept(element) {
+        return true;
+    }
     
 }
 
@@ -70,6 +77,12 @@ export class Container extends Element {
     isContainer = true;
     direction = CONTAINER_DIRECTION.AUTO;
     elements = [];
+    // dropable = true;
+
+    dropable(element) {
+        return true;
+    }
+
     constructor(source) {
         super(source);
         this.createSubElements(source);

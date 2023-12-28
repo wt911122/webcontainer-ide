@@ -3,7 +3,7 @@
         :focus="isFocus">
         <template v-if="meta.active">
             <div :class="$style.rootTitle">{{ title }}</div>
-            <svg :width="width" :height="height" xmlns="http://www.w3.org/2000/svg" >
+            <svg :style="transform" :width="width" :height="height" :viewBox="viewBox" xmlns="http://www.w3.org/2000/svg" >
                 <path
                     fill="none"
                     stroke-width="3"
@@ -34,16 +34,20 @@ export default {
         },
         viewBox() {
             const viewbox = this.meta.viewbox;
-            return `${viewbox.x} ${viewbox.y} ${viewbox.width} ${viewbox.height}`
+            return `${viewbox.x-3} ${viewbox.y-3} ${viewbox.width + 6} ${viewbox.height+6}`
         },
         width() {
-            return this.meta.viewbox.width;
+            return this.meta.viewbox.width+6;
         },
         height() {
-            return this.meta.viewbox.height;
+            return this.meta.viewbox.height+6;
         },
         title() {
             return this.meta?.source?.tag || ''
+        },
+        transform() {
+            const viewbox = this.meta.viewbox;
+            return `transform: translate(${viewbox.x-3}px, ${viewbox.y-3}px)`
         }
     },
     methods: {
