@@ -9,9 +9,6 @@
                 <Selector :meta="target" :isFocus="true"></Selector>
             </Wrapper>
         </template>
-        <HighlightSeg 
-            :segments="highlight_seg">
-        </HighlightSeg>
         <HighlightEmptySlot
             :meta="highlight_empty_slot">
         </HighlightEmptySlot>
@@ -22,6 +19,9 @@
             :active="highlight_elem.active">
             <Selector :meta="highlight_elem" :isFocus="false"></Selector>
         </Wrapper>
+        <HighlightSeg 
+            :segments="highlight_seg">
+        </HighlightSeg>
     </div>
 </template>
 <script setup>
