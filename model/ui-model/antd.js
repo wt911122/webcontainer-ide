@@ -1,9 +1,29 @@
 import { Element, Container, CONTAINER_DIRECTION } from './base';
 import { CSSInlineStyleToObjectString } from '../utils';
 
+class TranslateContext {
+    refComps = new Set();
+    preCode = '';
+    constructor(obj) {
+        Object.assign(this, obj);
+    }
+    genContext() {
+        return new TranslateContext({
+            refComps: this.refComps,
+            preCode: '',
+        })
+    }
+
+    useNewContext(callback) {
+        const newContext = this.genContext();
+        callback(newContext);
+        this.preCode = newContext.preCode + this.preCode;
+    }
+}
+
 class AntdElement extends Element {
-    renderIDE(refComps) {
-        refComps.add(this.tag);
+    renderIDE(context) {
+        context.refComps.add(this.tag);
         let compCode = `
     <${this.tag} 
         key="${this.componentKey}" 
@@ -33,8 +53,8 @@ class AntdContainer extends Container {
         }
     }
 
-    renderIDE(refComps) {
-        refComps.add(this.tag);
+    renderIDE(context) {
+        context.refComps.add(this.tag);
         let compCode = `
     <${this.tag} key="${this.componentKey}" 
         nodepath="${this.nodePath}" 
@@ -43,7 +63,7 @@ class AntdContainer extends Container {
         ${staticStyleToIDE(this.source.staticStyle)}>`;
         if(this.elements.length > 0) {
             this.elements.forEach(el => {
-                compCode += el.renderIDE(refComps);
+                compCode += el.renderIDE(context);
             });
         } else {
             compCode += `<EmptySlot />`
@@ -66,22 +86,25 @@ class EditableElemet extends AntdElement {
 export class Root extends AntdContainer {
     isRoot = true;
     renderIDE() {
-        const refComps = new Set();
+        const context = new TranslateContext();
+
         let comps = '';
         this.elements.forEach(el => {
-            comps += el.renderIDE(refComps);
+            comps += el.renderIDE(context);
         });
 
         let refCompCodes = '';
-        if(refComps.size > 0) {
+        if(context.refComps.size > 0) {
             refCompCodes = 'import { '
-            refCompCodes += Array.from(refComps).join(',');
+            refCompCodes += Array.from(context.refComps).join(',');
             refCompCodes += '} from "antd";'
         }
         const file = `
 import React from 'react';
-import EmptySlot from './Empty.jsx'
+import EmptySlot from './Empty.jsx';
+import HoistNodePath from './HoistNodePath.jsx'
 ${refCompCodes}
+${context.preCode}
 function View() {
     return (
         <>
@@ -117,7 +140,7 @@ class AbsoluteContainer extends AntdContainer {
         return source.tag === 'AbsoluteLayout'
     }
 
-    renderIDE(refComps) {
+    renderIDE(context) {
         let compCode = `
     <div key="${this.componentKey}" 
         nodepath="${this.nodePath}" 
@@ -126,12 +149,150 @@ class AbsoluteContainer extends AntdContainer {
         ${staticStyleToIDE(this.source.staticStyle)}>`;
         if(this.elements.length > 0) {
             this.elements.forEach(el => {
-                compCode += el.renderIDE(refComps);
+                compCode += el.renderIDE(context);
             });
         }
         compCode += `</div>\n`;
         return compCode;
     }
+}
+
+class TableContainer extends AntdContainer {
+    direction = CONTAINER_DIRECTION.ROW;
+    static accept(source) {
+        return source.tag === 'Table';
+    }
+    dropable(element) {
+        return element.tag === 'TableColumn'
+    }
+
+    createSubElements(source) {
+        let children;
+        if(source.concept === 'ViewElement') {
+            children = source.children;
+        }
+        if(children) {
+            this.elements = children.map(mapFunc(this));
+        }
+    }
+
+    renderIDE(context) {
+        context.refComps.add('Table');
+        const columnRefKey = `table_${this.componentKey}_columns`;
+        // const dataRefKey = `table_${this.componentKey}_data`;
+       
+        context.preCode += `
+        \nconst ${columnRefKey} = [`;
+        context.useNewContext((newContext) => {
+            this.elements.forEach(el => {
+                context.preCode += el.renderIDE(newContext);
+            });
+        });
+        context.preCode += `];\n`;
+       
+
+        let compCode = `
+    <div nodepath="${this.nodePath}" 
+        ide-iscontainer="true"  
+        key="${this.componentKey}"
+        ${staticStyleToIDE(this.source.staticStyle)}>
+        <Table 
+            columns={${columnRefKey}}
+            dataSource={[{}, {}, {}]}></Table>
+    </div>\n`;
+        return compCode;
+    }
+}
+
+class TableColumn extends AntdContainer {
+    
+    static accept(source) {
+        return source.tag === 'TableColumn';
+    }
+
+    dropToAccept(element) {
+        return element.tag === 'Table'
+    }
+    
+    dropable(element) {
+        return false;
+    }
+
+    createSubElements(source) {
+        let children;
+        if(source.concept === 'ViewElement') {
+            children = source.children;
+        }
+        if(children) {
+            this.elements = children.map(mapFunc(this));
+        }
+    }
+    renderIDE(context) {
+        const title = this.elements.find(tmpl => tmpl.source.slotTarget === 'title');
+        const cell = this.elements.find(tmpl => tmpl.source.slotTarget === 'cell');
+        let compCode = `
+        {
+            ${bindAttributeToKV(this.source.bindAttrs)},
+        `;
+        if(title) {
+            const columnRefKey = `table_column_${this.componentKey}_title`;
+            context.preCode += `
+            \nconst ${columnRefKey} = () => (
+                <>
+                <HoistNodePath nodePath="${this.nodePath}" topSelector="th" />`;
+            context.useNewContext((newContext) => {
+                context.preCode += title.renderIDE(newContext);
+            });
+            context.preCode += `</>);\n`;
+            compCode += `title: ${columnRefKey},`
+        }
+        compCode += `
+                render: () => (
+                    ${cell.renderIDE(context)}
+                ),
+            },`
+
+        return compCode;
+    }
+}
+
+class OpenTemplate extends AntdContainer {
+    draggable = false;
+    static accept(source) {
+        return source.tag === 'OpenTemplate';
+    }
+    createSubElements(source) {
+        let children;
+        if(source.concept === 'ViewElement') {
+            children = source.children;
+        }
+        if(children) {
+            this.elements = children.map(mapFunc(this));
+        }
+    }
+    renderIDE(context) {
+        let comps = '';
+        if(this.elements.length > 0) {
+            this.elements.forEach(el => {
+                comps += el.renderIDE(context);
+            });
+        } else {
+            comps += `<EmptySlot />`
+        }
+        let compCode = `
+        <div nodepath="${this.nodePath}" ide-draggable="false">
+            ${comps}
+        </div>`
+
+        return compCode;
+    }
+}
+
+function bindAttributeToKV(bindAttrs) {
+    if(bindAttrs && bindAttrs.length > 0) {
+        return bindAttrs.map(attr => `${attr.name}: "${attr.value}"`).join(',\n')
+    } 
+    return '';
 }
 
 function bindAttributeToIDE(bindAttrs) {
@@ -155,6 +316,9 @@ function staticStyleToIDE(staticStyle) {
 const ViewElementClass = [
     AbsoluteContainer,
     FlexContainer,
+    TableContainer,
+    TableColumn,
+    OpenTemplate,
     EditableElemet,
     AntdElement
 ]

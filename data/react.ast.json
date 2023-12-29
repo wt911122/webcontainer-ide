@@ -61,6 +61,138 @@
                     "staticStyle": "left: 20px; top: 20px;"
                 }
             ]
+        },
+        {
+            "concept": "ViewElement",
+            "tag": "Table",
+            "children": [
+                {
+                    "concept": "ViewElement",
+                    "tag": "TableColumn",
+                    "bindAttrs": [
+                        {
+                            "concept": "BindAttribute",
+                            "name": "dataIndex",
+                            "value": "name"
+                        },
+                        {
+                            "concept": "BindAttribute",
+                            "name": "key",
+                            "value": "name"
+                        }
+                    ],
+                    "children": [
+                        {
+                            "concept": "ViewElement",
+                            "tag": "OpenTemplate",
+                            "slotTarget": "title",
+                            "children": [
+                                {
+                                    "concept": "ViewElement",
+                                    "tag": "span",
+                                    "innerText": "Name"
+                                }
+                            ]
+                        },
+                        {
+                            "concept": "ViewElement",
+                            "tag": "OpenTemplate",
+                            "slotTarget": "cell",
+                            "children": [
+                                {
+                                    "concept": "ViewElement",
+                                    "tag": "a",
+                                    "innerText": "name"
+                                }
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "concept": "ViewElement",
+                    "tag": "TableColumn",
+                    "bindAttrs": [
+                        {
+                            "concept": "BindAttribute",
+                            "name": "dataIndex",
+                            "value": "age"
+                        },
+                        {
+                            "concept": "BindAttribute",
+                            "name": "key",
+                            "value": "age"
+                        }
+                    ],
+                    "children": [
+                        {
+                            "concept": "ViewElement",
+                            "tag": "OpenTemplate",
+                            "slotTarget": "title",
+                            "children": [
+                                {
+                                    "concept": "ViewElement",
+                                    "tag": "span",
+                                    "innerText": "Age"
+                                }
+                            ]
+                        },
+                        {
+                            "concept": "ViewElement",
+                            "tag": "OpenTemplate",
+                            "slotTarget": "cell",
+                            "children": [
+                                {
+                                    "concept": "ViewElement",
+                                    "tag": "span",
+                                    "innerText": "age"
+                                }
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "concept": "ViewElement",
+                    "tag": "TableColumn",
+                    "bindAttrs": [
+                        {
+                            "concept": "BindAttribute",
+                            "name": "key",
+                            "value": "action"
+                        }
+                    ],
+                    "children": [
+                        {
+                            "concept": "ViewElement",
+                            "tag": "OpenTemplate",
+                            "slotTarget": "title",
+                            "children": [
+                                {
+                                    "concept": "ViewElement",
+                                    "tag": "span",
+                                    "innerText": "Action"
+                                }
+                            ]
+                        },
+                        {
+                            "concept": "ViewElement",
+                            "tag": "OpenTemplate",
+                            "slotTarget": "cell",
+                            "children": [
+                                {
+                                    "concept": "ViewElement",
+                                    "tag": "a",
+                                    "innerText": "Invite name"
+                                },
+                                {
+                                    "concept": "ViewElement",
+                                    "tag": "a",
+                                    "innerText": "Delete"
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
         }
     ]
 }

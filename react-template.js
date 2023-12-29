@@ -18,6 +18,9 @@ export const files = {
 		"/src/Empty.jsx": {
 			"code": "import './empty.css';\n\nexport default function () {\n    return (\n        <div className=\"empty-slot\" emptyslot=\"true\"></div>\n    )\n}"
 		},
+		"/src/HoistNodePath.jsx": {
+			"code": "import { useEffect, useRef } from 'react';\n\nexport default function ({ topSelector, nodePath }) {\n    const ref = useRef(null);\n    useEffect(() => {\n        let el = ref.current.parentNode;\n        do {\n            if(el.matches(topSelector)) {\n                break;\n            }\n            el = el.parentNode;\n        } while(el);\n        el.setAttribute('nodepath', nodePath);\n    })\n    return (\n        <div ref={ref}></div>\n    )\n}"
+		},
 		"/src/Main.jsx": {
 			"code": "import App from \"./App.jsx\";\nimport React from 'react';\n\nfunction Main() {\n  return (\n    <React.StrictMode>\n      <App />\n    </React.StrictMode>\n  );\n}\n\nexport default Main;"
 		},

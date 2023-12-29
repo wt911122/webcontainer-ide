@@ -80,7 +80,7 @@ export default {
 }
 .rootTitle{
     position: absolute;
-    transform: translateY(-100%);
+    transform: translateY(-100%) translateX(-1.5px);
     left: 0;
     top: 0;
     background-color: blue;
