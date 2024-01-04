@@ -129,4 +129,4 @@ function launchVueCloudUI() {
         cloudDragdropBehavior(Flex, [antdModel.makeUIElement(MovingNode)]);
     })
 }
-// launchVueCloudUI();
+launchVueCloudUI();
