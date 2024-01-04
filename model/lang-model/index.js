@@ -1,6 +1,8 @@
+let uuid = 0;
 class BaseNode {
     concept = '';
     constructor(source) {
+        this.id = uuid++;
         Object.assign(this, source)
         this.concept = source.concept;    
         this.tag = source.tag;
@@ -133,5 +135,16 @@ class BindAttribute extends BaseNode {
         if(source.expression) {
             this.value = parseExp(source.expression);
         }
+    }
+}
+
+
+export class Module extends BaseNode {
+    name = '';
+    version = '';
+    constructor(source) {
+        super(source);
+        this.name = source.name;
+        this.version = source.version;
     }
 }

@@ -6,22 +6,27 @@ import { IDEModel } from './model/ide-model';
 import { View, ViewElement } from './model/lang-model';
 import { getNodeByNodePath as getUINodeByNodePath } from './model/ui-model/base';
 
-export function launch({
+export async function launch({
     domRoot, 
     template, 
     filePath,
     data, 
     UIModel,
     Simulator,
+    modules = [],
     updateElement,
 }) {
-    const { makeRootUIElement, makeUIElement } = UIModel;
+    const { makeRootUIElement, viewCtors } = UIModel;
     const ViewModel = new View(data);
     const ideModel = new IDEModel(ViewModel);
     ideModel.useUI({
-        makeUIElement,
+        viewCtors,
         makeRootUIElement,
     });
+    for(let m of modules) {
+        await ideModel.registComponent(m)
+    }
+    
     ideModel.refresh();
 
     function getNodeByNodePath(nodepath) {
@@ -32,8 +37,10 @@ export function launch({
     const simulator = new Simulator(template, filePath);
     const content = ideModel.genCode();
     console.log(content);
-    simulator.mutateContentInTemplateBeforeLoad(content);
-  
+    simulator.mutateContentInTemplate(content);
+    for(let m of modules) {
+        await simulator.mutateInternalDep(m)
+    }
 
     function writeFile() {
         const content = ideModel.genCode();

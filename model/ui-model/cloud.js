@@ -1,6 +1,6 @@
 import { Element, Container, CONTAINER_DIRECTION } from './base';
-
-class CloudElement extends Element {
+let globalIdeModel;
+export class CloudElement extends Element {
     renderIDE() {
         let compCode = `
     <${this.tag} 
@@ -14,7 +14,7 @@ class CloudElement extends Element {
     } 
 }
 
-class CloudContainer extends Container {
+export class CloudContainer extends Container {
     createSubElements(source) {
         let children;
         if(source.concept === 'View') {
@@ -59,11 +59,23 @@ class EditableElemet extends CloudElement {
 
 export class Root extends CloudContainer {
     isRoot = true;
-    renderIDE() {
+    renderIDE(dependencies) {
         let comps = '';
         this.elements.forEach(el => {
             comps += el.renderIDE();
         });
+        let depDeclare = [];
+        let internalComponentID = 1;
+        dependencies.forEach(dep => {
+            depDeclare.push({
+                importKey: `internalComp${internalComponentID++}`,
+                url: `@internals/${dep.name}`,
+                tag: dep.name
+            })
+        })
+        
+        const internalComps = depDeclare.map(dec => `import ${dec.importKey} from "${dec.url}";`).join('\n')
+        const useInternalComps = depDeclare.map(dec => `"${dec.tag}": ${dec.importKey}`).join(',\n');
         const file = `
         <template>
             <div id="root">
@@ -72,11 +84,13 @@ export class Root extends CloudContainer {
         </template>
         <script>
         import EmptySlot from './Empty.vue'
-        import HoistNodePath from './HoistNodePath.vue'
+        import HoistNodePath from './HoistNodePath.vue';
+        ${internalComps}
         export default {
             components: {
                 EmptySlot,
-                HoistNodePath
+                HoistNodePath,
+                ${useInternalComps}
             }
         }
         </script>
@@ -297,6 +311,12 @@ function staticStyleToIDE(staticStyle) {
     return '';
 }
 
+export function ideCommonAttributes(c) {
+    return `key="${c.componentKey}" nodepath="${c.nodePath}" 
+    ${bindAttributeToIDE(c.source.bindAttrs)}
+    ${staticStyleToIDE(c.source.staticStyle)}`
+}
+
 
 const ViewElementClass = [
     AbsoluteContainer,
@@ -307,24 +327,17 @@ const ViewElementClass = [
     CloudElement
 ]
 
-function makeUIElement(source) {
-    const Ctor = ViewElementClass.find(c => c.accept(source));
-    return new Ctor(source);
-}
 
-function makeRootUIElement(source) {
+function makeRootUIElement(source, ideModel) {
+    globalIdeModel = ideModel;
     return new Root(source);
 }
 
 function mapFunc(parent) {
-    return (source) => {
-        const element = makeUIElement(source);
-        element.parentNode = parent;
-        return element;
-    }
+    return globalIdeModel.mapElements(parent);
 }
 
 export default {
-    makeUIElement,
+    viewCtors: ViewElementClass,
     makeRootUIElement
 }

@@ -3,10 +3,13 @@ import { defineConfig } from 'vite';
 
 export default defineConfig({
   // server: {
-  //   headers: {
-  //     'Cross-Origin-Embedder-Policy': 'require-corp',
-  //     'Cross-Origin-Opener-Policy': 'same-origin',
-  //   },
+  //   proxy: {
+  //     '/components': 'http://localhost:57526'
+  //   }
+    // headers: {
+    //   'Cross-Origin-Embedder-Policy': 'require-corp',
+    //   'Cross-Origin-Opener-Policy': 'same-origin',
+    // },
   // },
   base: '/webcontainer-ide/',
   plugins: [vue()],

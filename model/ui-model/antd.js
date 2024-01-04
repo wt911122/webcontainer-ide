@@ -1,6 +1,8 @@
 import { Element, Container, CONTAINER_DIRECTION } from './base';
 import { CSSInlineStyleToObjectString } from '../utils';
 
+let globalIdeModel;
+
 class TranslateContext {
     refComps = new Set();
     preCode = '';
@@ -21,7 +23,7 @@ class TranslateContext {
     }
 }
 
-class AntdElement extends Element {
+export class AntdElement extends Element {
     renderIDE(context) {
         context.refComps.add(this.tag);
         let compCode = `
@@ -39,7 +41,7 @@ class AntdElement extends Element {
     } 
 }
 
-class AntdContainer extends Container {
+export class AntdContainer extends Container {
     createSubElements(source) {
         let children;
         if(source.concept === 'View') {
@@ -85,7 +87,7 @@ class EditableElemet extends AntdElement {
 
 export class Root extends AntdContainer {
     isRoot = true;
-    renderIDE() {
+    renderIDE(dependencies) {
         const context = new TranslateContext();
 
         let comps = '';
@@ -93,16 +95,32 @@ export class Root extends AntdContainer {
             comps += el.renderIDE(context);
         });
 
+
+        let depDeclare = [];
+        let internalComponentID = 1;
+        dependencies.forEach(dep => {
+            depDeclare.push({
+                importKey: `internalComp${internalComponentID++}`,
+                url: `@internals/${dep.name}`,
+                tag: dep.name
+            })
+        })
+
         let refCompCodes = '';
         if(context.refComps.size > 0) {
+            
             refCompCodes = 'import { '
             refCompCodes += Array.from(context.refComps).join(',');
             refCompCodes += '} from "antd";'
         }
+
+        
+        const internalComps = depDeclare.map(dec => `import ${dec.tag} from "${dec.url}";`).join('\n')
         const file = `
 import React from 'react';
 import EmptySlot from './Empty.jsx';
 import HoistNodePath from './HoistNodePath.jsx'
+${internalComps}
 ${refCompCodes}
 ${context.preCode}
 function View() {
@@ -312,6 +330,12 @@ function staticStyleToIDE(staticStyle) {
     return '';
 }
 
+export function ideCommonAttributes(c) {
+    return `key="${c.componentKey}" nodepath="${c.nodePath}" 
+    ${bindAttributeToIDE(c.source.bindAttrs)}
+    ${staticStyleToIDE(c.source.staticStyle)}`
+}
+
 
 const ViewElementClass = [
     AbsoluteContainer,
@@ -323,24 +347,16 @@ const ViewElementClass = [
     AntdElement
 ]
 
-function makeUIElement(source) {
-    const Ctor = ViewElementClass.find(c => c.accept(source));
-    return new Ctor(source);
-}
-
-function makeRootUIElement(source) {
+function makeRootUIElement(source, ideModel) {
+    globalIdeModel = ideModel;
     return new Root(source);
 }
 
 function mapFunc(parent) {
-    return (source) => {
-        const element = makeUIElement(source);
-        element.parentNode = parent;
-        return element;
-    }
+    return globalIdeModel.mapElements(parent);
 }
 
 export default {
-    makeUIElement,
+    viewCtors: ViewElementClass,
     makeRootUIElement
 }

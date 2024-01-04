@@ -8,7 +8,23 @@ import { files as vueFiles } from './vue-template';
 import vueJSONData from './data/vue.ast.json';
 import cloudModel from './model/ui-model/cloud';
 
+import componentFile from './extend-component/cloud-ui/login/dist/component?raw' 
+import elementFile from './extend-component/cloud-ui/login/dist/element?raw' 
+
+import chartcomponentFile from './extend-component/antd/chart/dist/component?raw' 
+import chartElementFile from './extend-component/antd/chart/dist/element?raw' 
+
+
 import { launch } from './designer';
+
+const chartModule = {
+    name: "ReactChart",
+    version: "1.0.0",
+    type: "component",
+    component: chartcomponentFile,
+    element: chartElementFile,
+}
+
 function launchReactAntd() {
     const { dragDropBehavior: antdDragdropBehavior } = launch({
         domRoot: document.querySelector('#react-app'),
@@ -17,6 +33,7 @@ function launchReactAntd() {
         data: reactJSONData,
         UIModel: antdModel,
         Simulator: CodeSandBoxSimulator,
+        modules: [chartModule],
         updateElement(currentNode, type, value) {
             if(type === 'content') {
                 currentNode.innerText = value;
@@ -53,6 +70,13 @@ function launchReactAntd() {
 launchReactAntd();
 
 
+const lcapLoginModule = {
+    name: "lcap-login",
+    version: "1.0.0",
+    type: "component",
+    component: componentFile,
+    element: elementFile,
+}
 
 function launchVueCloudUI() {
     const { dragDropBehavior: cloudDragdropBehavior } = launch({
@@ -62,6 +86,9 @@ function launchVueCloudUI() {
         data: vueJSONData,
         UIModel: cloudModel,
         Simulator: CodeSandBoxSimulator,
+        modules: [
+            lcapLoginModule
+        ],
         updateElement(currentNode, type, value) {
             if(type === 'content') {
                 const bindAttr = currentNode.source.bindAttrs.find(b => b.name === 'text');
@@ -102,4 +129,4 @@ function launchVueCloudUI() {
         cloudDragdropBehavior(Flex, [antdModel.makeUIElement(MovingNode)]);
     })
 }
-launchVueCloudUI();
+// launchVueCloudUI();

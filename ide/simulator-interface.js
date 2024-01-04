@@ -16,4 +16,6 @@ export class Simulator extends EventTarget {
     mutateContentInTemplateBeforeLoad(content) {}
 
     async updateProject() {}
+
+    async updatePackageJSON() {}
 }

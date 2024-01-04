@@ -20,6 +20,10 @@
         },
         {
             "concept": "ViewElement",
+            "tag": "lcap-login"
+        },
+        {
+            "concept": "ViewElement",
             "tag": "AbsoluteLayout",
             "children": [
                 {

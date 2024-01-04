@@ -12,6 +12,7 @@ class Surface {
         rects: [],
         polygonPath: [],
         viewbox: [],
+        noTitle: false,
         source: null,
     })
 
@@ -74,6 +75,7 @@ class Surface {
         } 
         if(!_isSameTarget(this.highlight_elem.source, config.source)) {
             Object.assign(this.highlight_elem, {
+                noTitle: false,
                 ...config,
                 ...this.resolveRects(config.rects),
                 active: true,
@@ -169,6 +171,22 @@ class Surface {
         }
     }
 
+    async setHoverNode(nodePath) {
+        const info = await this.ide.getElementInfoByNodePath(nodePath);
+        this.highlightElem({
+            ...info,
+            noTitle: true,
+        })
+    }
+    async setFocusNode(source) {
+        const elementInfo = await this.ide.getElementInfoByNodePath(source.nodePath);
+        this.closeHighlightElem();
+        this.setFocus({
+            source,
+            rects: elementInfo.rects
+        })
+    }
+
     closeAll() {
         this.closeHighlightElem();
         this.highlightSeg(false);
@@ -196,10 +214,14 @@ class SurfaceRenderer {
     
     renderFn() {
         const surface = this.surface;
+        // const ide = surface.ide;
         return {
             inheritAttrs: false,
             setup() {
                 provide('getSurface', () => surface)
+                provide('setHighlightNode', (nodePath) => { surface.setHoverNode(nodePath)});
+                provide('closeHighlightElem', () => { surface.closeHighlightElem()});
+                provide('setFocusNode', (source) => { surface.setFocusNode(toRaw(source))})
                 return () => h(SurfaceElem);
             }
         }

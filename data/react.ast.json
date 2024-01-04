@@ -45,6 +45,10 @@
         },
         {
             "concept": "ViewElement",
+            "tag": "ReactChart"
+        },
+        {
+            "concept": "ViewElement",
             "tag": "AbsoluteLayout",
             "children": [
                 {
