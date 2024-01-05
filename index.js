@@ -25,8 +25,8 @@ const chartModule = {
     element: chartElementFile,
 }
 
-function launchReactAntd() {
-    const { dragDropBehavior: antdDragdropBehavior } = launch({
+async function launchReactAntd() {
+    const { dragDropBehavior: antdDragdropBehavior, ideModel } = await launch({
         domRoot: document.querySelector('#react-app'),
         template: reactFiles,
         filePath: '/src/App.jsx',
@@ -53,7 +53,7 @@ function launchReactAntd() {
             "innerText": "buttonX" + (id++)
         });
 
-        antdDragdropBehavior(Button, [antdModel.makeUIElement(MovingNode)]);
+        antdDragdropBehavior(Button, [ideModel.makeUIElement(MovingNode)]);
     })
 
     const Flex = document.getElementById('react-Flex');
@@ -64,7 +64,7 @@ function launchReactAntd() {
             "concept": "ViewElement",
             "tag": "Flex",
         });
-        antdDragdropBehavior(Flex, [antdModel.makeUIElement(MovingNode)]);
+        antdDragdropBehavior(Flex, [ideModel.makeUIElement(MovingNode)]);
     })
 }
 launchReactAntd();
@@ -78,8 +78,8 @@ const lcapLoginModule = {
     element: elementFile,
 }
 
-function launchVueCloudUI() {
-    const { dragDropBehavior: cloudDragdropBehavior } = launch({
+async function launchVueCloudUI() {
+    const { dragDropBehavior: cloudDragdropBehavior, ideModel } = await launch({
         domRoot: document.querySelector('#vue-app'),
         template: vueFiles,
         filePath: '/src/App.vue',
@@ -115,7 +115,7 @@ function launchVueCloudUI() {
             ]
         });
 
-        cloudDragdropBehavior(Button, [antdModel.makeUIElement(MovingNode)]);
+        cloudDragdropBehavior(Button, [ideModel.makeUIElement(MovingNode)]);
     })
 
     const Flex = document.getElementById('vue-linear-layout');
@@ -126,7 +126,7 @@ function launchVueCloudUI() {
             "concept": "ViewElement",
             "tag": "u-linear-layout",
         });
-        cloudDragdropBehavior(Flex, [antdModel.makeUIElement(MovingNode)]);
+        cloudDragdropBehavior(Flex, [ideModel.makeUIElement(MovingNode)]);
     })
 }
 launchVueCloudUI();

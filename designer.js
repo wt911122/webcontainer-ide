@@ -3,7 +3,7 @@ import IDE from './ide/ide';
 import { chooseStrategy, dragStartStrategy } from './model/prepare-drop-strategy';
 
 import { IDEModel } from './model/ide-model';
-import { View, ViewElement } from './model/lang-model';
+import { View } from './model/lang-model';
 import { getNodeByNodePath as getUINodeByNodePath } from './model/ui-model/base';
 
 export async function launch({
@@ -140,6 +140,7 @@ export async function launch({
     
     
     return {
-        dragDropBehavior
+        dragDropBehavior,
+        ideModel
     }
 }
