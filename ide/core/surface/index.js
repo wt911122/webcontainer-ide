@@ -3,7 +3,7 @@ import { createApp, reactive, h, toRaw, provide } from 'vue'
 import SurfaceElem from './surface.vue';
 import { calcPolygonPath } from './polygon';
 
-class Surface {
+class Surface extends EventTarget{
     targets = reactive([]);
 
     highlight_elem = reactive({
@@ -25,6 +25,11 @@ class Surface {
         active: false,
         rect: [],
     })
+
+    constructor(_refresh) {
+        super();
+        this.refreshIDE = _refresh;
+    }
 
     apply(ide, dom) {
         this.ide = ide;
@@ -221,7 +226,10 @@ class SurfaceRenderer {
                 provide('getSurface', () => surface)
                 provide('setHighlightNode', (nodePath) => { surface.setHoverNode(nodePath)});
                 provide('closeHighlightElem', () => { surface.closeHighlightElem()});
-                provide('setFocusNode', (source) => { surface.setFocusNode(toRaw(source))})
+                provide('setFocusNode', (source) => { surface.setFocusNode(toRaw(source))});
+                provide('dispatchEvent', () => {
+                    surface.dispatchEvent()
+                })
                 return () => h(SurfaceElem);
             }
         }

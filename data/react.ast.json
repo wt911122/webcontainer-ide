@@ -3,6 +3,17 @@
     "elements": [
         {
             "concept": "ViewElement",
+            "tag": "Breadcrumb",
+            "bindAttrs": [
+                {
+                    "concept": "BindAttribute",
+                    "name": "auto",
+                    "value": true
+                }
+            ]
+        },
+        {
+            "concept": "ViewElement",
             "tag": "Flex",
             "bindAttrs": [
                 {
@@ -15,98 +26,70 @@
                 {
                     "concept": "ViewElement",
                     "tag": "Button",
-                    "innerText": "button1"
-                },
-                {
-                    "concept": "ViewElement",
-                    "tag": "Button",
-                    "innerText": "button2",
                     "bindAttrs": [
                         {
                             "concept": "BindAttribute",
-                            "name": "type",
-                            "value": "primary"
+                            "name": "text",
+                            "value": "button2"
                         }
                     ]
                 },
                 {
                     "concept": "ViewElement",
                     "tag": "Button",
-                    "innerText": "button3",
+                    "bindAttrs": [
+                        {
+                            "concept": "BindAttribute",
+                            "name": "type",
+                            "value": "primary"
+                        }, 
+                        {
+                            "concept": "BindAttribute",
+                            "name": "text",
+                            "value": "button2"
+                        }
+                    ]
+                },
+                {
+                    "concept": "ViewElement",
+                    "tag": "Button",
                     "bindAttrs": [
                         {
                             "concept": "BindAttribute",
                             "name": "type",
                             "value": "link"
-                        }
-                    ]
-                }
-            ]
-        },
-        {
-            "concept": "ViewElement",
-            "tag": "ReactChart"
-        },
-        {
-            "concept": "ViewElement",
-            "tag": "AbsoluteLayout",
-            "children": [
-                {
-                    "concept": "ViewElement",
-                    "tag": "Button",
-                    "innerText": "button3",
-                    "bindAttrs": [
+                        },
                         {
                             "concept": "BindAttribute",
-                            "name": "type",
-                            "value": "primary"
+                            "name": "text",
+                            "value": "button3"
                         }
-                    ],
-                    "staticStyle": "left: 20px; top: 20px;"
+                    ]
                 }
             ]
         },
         {
             "concept": "ViewElement",
             "tag": "Table",
+            "children": []
+        },
+        {
+            "concept": "ViewElement",
+            "tag": "Modal",
             "children": [
                 {
                     "concept": "ViewElement",
-                    "tag": "TableColumn",
-                    "bindAttrs": [
-                        {
-                            "concept": "BindAttribute",
-                            "name": "dataIndex",
-                            "value": "name"
-                        },
-                        {
-                            "concept": "BindAttribute",
-                            "name": "key",
-                            "value": "name"
-                        }
-                    ],
+                    "tag": "template",
+                    "slotTarget": "title",
                     "children": [
                         {
                             "concept": "ViewElement",
-                            "tag": "OpenTemplate",
-                            "slotTarget": "title",
-                            "children": [
+                            "tag": "Text",
+                            "bindAttrs": [
                                 {
-                                    "concept": "ViewElement",
-                                    "tag": "span",
-                                    "innerText": "Name"
-                                }
-                            ]
-                        },
-                        {
-                            "concept": "ViewElement",
-                            "tag": "OpenTemplate",
-                            "slotTarget": "cell",
-                            "children": [
-                                {
-                                    "concept": "ViewElement",
-                                    "tag": "a",
-                                    "innerText": "name"
+                                    "concept": "BindAttribute",
+                                    "name": "text",
+                                    "value": "Model"
                                 }
                             ]
                         }
@@ -114,83 +97,69 @@
                 },
                 {
                     "concept": "ViewElement",
-                    "tag": "TableColumn",
-                    "bindAttrs": [
-                        {
-                            "concept": "BindAttribute",
-                            "name": "dataIndex",
-                            "value": "age"
-                        },
-                        {
-                            "concept": "BindAttribute",
-                            "name": "key",
-                            "value": "age"
-                        }
-                    ],
+                    "tag": "template",
+                    "slotTarget": "body",
                     "children": [
                         {
                             "concept": "ViewElement",
-                            "tag": "OpenTemplate",
-                            "slotTarget": "title",
-                            "children": [
+                            "tag": "Flex",
+                            "bindAttrs": [
                                 {
-                                    "concept": "ViewElement",
-                                    "tag": "span",
-                                    "innerText": "Age"
+                                    "concept": "BindAttribute",
+                                    "name": "gap",
+                                    "value": "middle"
+                                },
+                                {
+                                    "concept": "BindAttribute",
+                                    "name": "vertical",
+                                    "value": "true"
                                 }
-                            ]
-                        },
-                        {
-                            "concept": "ViewElement",
-                            "tag": "OpenTemplate",
-                            "slotTarget": "cell",
-                            "children": [
+                            ],
+                            "children" :[
                                 {
                                     "concept": "ViewElement",
-                                    "tag": "span",
-                                    "innerText": "age"
-                                }
-                            ]
-                        }
-                    ]
-                },
-                {
-                    "concept": "ViewElement",
-                    "tag": "TableColumn",
-                    "bindAttrs": [
-                        {
-                            "concept": "BindAttribute",
-                            "name": "key",
-                            "value": "action"
-                        }
-                    ],
-                    "children": [
-                        {
-                            "concept": "ViewElement",
-                            "tag": "OpenTemplate",
-                            "slotTarget": "title",
-                            "children": [
-                                {
-                                    "concept": "ViewElement",
-                                    "tag": "span",
-                                    "innerText": "Action"
-                                }
-                            ]
-                        },
-                        {
-                            "concept": "ViewElement",
-                            "tag": "OpenTemplate",
-                            "slotTarget": "cell",
-                            "children": [
-                                {
-                                    "concept": "ViewElement",
-                                    "tag": "a",
-                                    "innerText": "Invite name"
+                                    "tag": "Button",
+                                    "bindAttrs": [
+                                        {
+                                            "concept": "BindAttribute",
+                                            "name": "text",
+                                            "value": "button1"
+                                        }
+                                    ]
                                 },
                                 {
                                     "concept": "ViewElement",
-                                    "tag": "a",
-                                    "innerText": "Delete"
+                                    "tag": "Button",
+                                    "bindAttrs": [
+                                        {
+                                            "concept": "BindAttribute",
+                                            "name": "type",
+                                            "value": "primary"
+                                        },
+                                        {
+                                            "concept": "BindAttribute",
+                                            "name": "text",
+                                            "value": "button2"
+                                        }
+                                    ]
+                                }
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "concept": "ViewElement",
+                    "tag": "template",
+                    "slotTarget": "footer",
+                    "children": [
+                        {
+                            "concept": "ViewElement",
+                            "tag": "Text",
+                            "bindAttrs": [
+                                {
+                                    "concept": "BindAttribute",
+                                    "name": "text",
+                                    "value": "Model Foot"
                                 }
                             ]
                         }

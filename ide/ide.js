@@ -47,6 +47,8 @@ class IDE extends EventTarget {
     position = { x: 0, y: 0 };
     scale = 1;
 
+    surface = null;
+
     _registedMethods = new Map();
 
     postIframeMessage = null;
@@ -56,7 +58,7 @@ class IDE extends EventTarget {
         this.simulator = configs.simulator;
         // this.previewer = new Previewer();
         // this.previewer.setProject(configs.project)
-        this.surface = new Surface();
+        this.surface = configs.surface;
         this.getSourceByNodePath = configs.getSourceByNodePath;
         this.preRegistMethods();
     }
@@ -185,7 +187,7 @@ class IDE extends EventTarget {
                         this._focusOnNode(data.payload);
                         break;
                     case 'dblclick':
-                        this.dispatchEvent(new CustomEvent('frame:requestEditContent', {
+                        this.dispatchEvent(new CustomEvent('frame:dblclick', {
                             detail: data.payload
                         }))
                         break;
@@ -401,8 +403,8 @@ class IDE extends EventTarget {
         this.surface.closeHighlightElem();
     }
 
-    async highlightNodeByNodePath(nodePath) {
-        const payload = await this.getElementInfoByNodePath(nodePath);
+    async highlightNodeByNodePath(nodePath, selector) {
+        const payload = await this.getElementInfoByNodePath(nodePath, selector);
         this.highlightNode(payload);
     }
     clearFocus() {
@@ -547,7 +549,7 @@ class IDE extends EventTarget {
                 nodePaths: movingNodePaths
             }
         });
-        const dragbutton = document.importNode(target)
+        const dragbutton = document.importNode(target, true)
         dragbutton.style.position = 'fixed';
         dragbutton.style['pointer-events'] = 'none';
         document.body.appendChild(dragbutton);
@@ -634,6 +636,28 @@ class IDE extends EventTarget {
             }
         })
     }
+
+    doCallComponentMethod(payload) {
+        const { nodePath, method, argus = [] } = payload
+        this.postIframeMessage({
+            type: 'Method',
+            name: 'callComponentMethod',
+            payload: {
+                nodePath,
+                method,
+                argus
+            }
+        })
+    }
+    doSetRestrictArea(selector) {
+        this.postIframeMessage({
+            type: 'Method',
+            name: 'setRestrictArea',
+            payload: {
+                selector,
+            }
+        })
+    }
     
 
     // _postMessageToIframe(data) {
@@ -644,12 +668,13 @@ class IDE extends EventTarget {
     //     window.addEventListener('message', )
     // }
 
-    async getElementInfoByNodePath(nodePath) {
+    async getElementInfoByNodePath(nodePath, selector) {
         const info = await oneTripToPreview(this.postIframeMessage, {
             type: 'Method',
             name: 'getElementInfoByNodePath',
             payload: {
                 nodePath,
+                selector,
             }
         });
         // console.log(info)

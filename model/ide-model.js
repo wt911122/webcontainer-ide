@@ -50,8 +50,8 @@ export class IDEModel {
     refresh() {
         this._UILibModel = this._makeRootUIElement(this.source, this);
     }
-    genCode() {
-        return this._UILibModel.renderIDE(this._dependencies);
+    genCode(project) {
+        this._UILibModel.renderIDE(this._dependencies)(project);
     }
     getRoot() {
         return this._UILibModel;

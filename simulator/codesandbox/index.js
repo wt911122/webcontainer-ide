@@ -11,7 +11,7 @@ class CodeSandBoxSimulator extends Simulator {
     async launch() {
         const client = await loadSandpackClient(
             this.iframe, 
-            this.project, 
+            this.project.read(), 
             this.options
         );
         this.client = client;
@@ -24,37 +24,44 @@ class CodeSandBoxSimulator extends Simulator {
         //     }
         // })
     }
-    mutateContentInTemplate(content) {
-        this.project.files[this.filePath] = { code: content };
-    }
 
-    mutateInternalDep(module) {
-        this.project.files[`/node_modules/@internals/${module.name}/package.json`] = {
-            hidden: true,
-            code: JSON.stringify({
-                name: module.name,
-                main: "./index.js",
-            }),
-        };
-        this.project.files[`/node_modules/@internals/${module.name}/index.js`] = {
-            hidden: true,
-            code: module.component,
-        };
-    }
+    // mutateContentInTemplate(filePath, content) {
+    //     this.project.files[filePath] = { code: content };
+    // }
+    // mutateContentInTemplate(content) {
+    //     this.project.files[this.filePath] = { code: content };
+    // }
+
+    // mutateInternalDep(module) {
+    //     this.project.files[`/node_modules/@internals/${module.name}/package.json`] = {
+    //         hidden: true,
+    //         code: JSON.stringify({
+    //             name: module.name,
+    //             main: "./index.js",
+    //         }),
+    //     };
+    //     this.project.files[`/node_modules/@internals/${module.name}/index.js`] = {
+    //         hidden: true,
+    //         code: module.component,
+    //     };
+    // }
     // mutateDependenciedInTemplate(dependencies) {
     //     const packageJSON = this.project.files['/package.json'];
     //     const packageObj = JSON.parse(packageJSON);
     //     Object.assign(packageObj.dependencies, dependencies);
     //     this.project.files[this.filePath] = { code: JSON.stringify(packageObj) };
     // }
-    async updateProject(content) {
-        this.mutateContentInTemplate(content);
-        this.client.updateSandbox(this.project);
+    // async updateProject(content) {
+    //     this.mutateContentInTemplate(content);
+    //     this.client.updateSandbox(this.project);
+    // }
+    update() {
+        this.client.updateSandbox(this.project.read());
     }
-    async updatePackageJSON(dependencies) {
-        this.mutateDependenciedInTemplate(dependencies);
-        this.client.updateSandbox(this.project);
-    }
+    // async updatePackageJSON(dependencies) {
+    //     this.mutateDependenciedInTemplate(dependencies);
+    //     this.client.updateSandbox(this.project);
+    // }
 }
 
 export default CodeSandBoxSimulator;

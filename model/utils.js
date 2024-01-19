@@ -110,3 +110,9 @@ export function CSSInlineStyleToObjectString (styles) {
     }
 }
   
+export const CONTAINER_DIRECTION = {
+    ROW: 'row',
+    COLUMN: 'column',
+    FREE: 'free',
+    AUTO: 'auto',
+}

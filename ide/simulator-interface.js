@@ -1,8 +1,7 @@
 export class Simulator extends EventTarget {
-    constructor(project, filePath) {
+    constructor(project) {
         super();
         this.project = project;
-        this.filePath = filePath;
     }
 
     async load(iframe) {

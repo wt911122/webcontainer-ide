@@ -1,0 +1,163 @@
+[
+    {
+        "symbol": "Flex",
+        "name": "线性布局",
+        "jsonSchema": {
+            "name": "Flex",
+            "title": "线性布局",
+            "lib": "@internals/hoc-antd",
+            "idetype": "container",
+            "containerDirection": {
+                "expression": "this.getAttribute('vertical')?.value ? 'column' : 'row' "
+            },
+            "attrs": [
+                {
+                    "name": "vertical",
+                    "type": "boolean"
+                }
+            ]
+        }
+    },
+    {
+        "symbol": "Table",
+        "name": "表格",
+        "jsonSchema": {
+            "name": "Table",
+            "title": "表格",
+            "lib": "@internals/hoc-antd",
+            "idetype": "container",
+            "dataSource": {
+                "display": 3,
+                "loopElem": "table > tbody > tr",
+                "emptySlot": {
+                    "condition": "!this.getAttribute('dataSource') || this.elementsLength() === 0",
+                    "component": "TableSlot",
+                    "accept": {
+                        "expression": "target.concept === 'DataSource'"
+                    }
+                }
+            },
+            "childAccept": {
+                "expression": "target.tag === 'Column'"
+            },
+            "containerDirection": "row"
+        }
+    },
+    {
+        "symbol": "Column",
+        "name": "表格列",
+        "jsonSchema": {
+            "name": "Column",
+            "title": "表格列",
+            "lib": "@internals/hoc-antd",
+            "idetype": "container",
+            "childAccept": false,
+            "parentAccept": {
+                "expression": "target.tag === 'Table'"
+            },
+            "containerDirection": "row",
+            "selector": {
+                "expression": "this.getElement(el => el.slotTarget === 'title')",
+                "cssSelector": "th"
+            },
+            "slots": [
+                {
+                    "name": "title",
+                    "title": "标题",
+                    "description": "标题"
+                },
+                {
+                    "name": "render",
+                    "title": "表格",
+                    "description": "表格"
+                }
+            ]
+        }
+    }, 
+    {
+        "symbol": "Button",
+        "name": "按钮", 
+        "jsonSchema": {
+            "name": "Button",
+            "lib": "@internals/hoc-antd",
+            "idetype": "element",
+            "title": "按钮",
+            "editable": "text"
+        }
+    },
+    {
+        "symbol": "Text",
+        "name": "文本", 
+        "jsonSchema": {
+            "name": "Text",
+            "lib": "@internals/hoc-antd",
+            "idetype": "element",
+            "title": "文本",
+            "editable": "text"
+        }
+    },
+    {
+        "symbol": "Link",
+        "name": "链接", 
+        "jsonSchema": {
+            "name": "Link",
+            "lib": "@internals/hoc-antd",
+            "idetype": "element",
+            "title": "链接",
+            "editable": "text"
+        }
+    },
+    {
+        "symbol": "Modal",
+        "name": "弹框",
+        "jsonSchema": {
+            "name": "Modal",
+            "title": "弹框",
+            "lib": "@internals/hoc-antd",
+            "childAccept": false,
+            "idetype": "modal",
+            "modalSutando": "ModalSutando",
+            "selector": {
+                "expression": "this.getElement(el => el.slotTarget === 'body')",
+                "cssSelector": "div[class='ant-modal-content']"
+            },
+            "slots": [
+                {
+                    "name": "title",
+                    "title": "标题",
+                    "description": "标题"
+                    
+                },
+                {
+                    "name": "body",
+                    "title": "内容",
+                    "description": "内容"
+                    
+                },
+                {
+                    "name": "footer",
+                    "title": "底部内容",
+                    "description": "底部内容"
+                }
+            ]
+            
+        }
+    },
+    {
+        "symbol": "Breadcrumb",
+        "name": "面包屑", 
+        "jsonSchema": {
+            "name": "Breadcrumb",
+            "title": "面包屑",
+            "lib": "@internals/hoc-antd",
+            "idetype": "container",
+            "elementSutando": {
+                "component": "BreadcrumbIDEBanner",
+                "condition": "this.getAttribute('auto').value === true"
+            },
+            "childAccept": {
+                "expression": "target.tag === 'BreadcrumbItem'"
+            }
+        }
+    }
+]

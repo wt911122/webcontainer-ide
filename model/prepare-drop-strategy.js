@@ -8,12 +8,23 @@ import {
     shiftAutoSegBy,
     BoxToRectangle,
     CSSInlineStyleToObject,
-    CSSToStaticStyle
+    CSSToStaticStyle,
+    CONTAINER_DIRECTION,
 } from './utils';
 
-import { CONTAINER_DIRECTION, getNodeByNodePath } from './ui-model/base';
-// import { getNodeByNodePath, CSSInlineStyleToObject, CSSToStaticStyle } from './index';
+import { 
+    resolveDataSource,
+    genTableFromDataSource
+} from './global-utils';
 
+let getNodeByNodePath;
+export function setGetNodeByNodePathFunc(func) {
+    getNodeByNodePath = func;
+}
+
+function _dropToAccept(n, target) {
+    return n.dropToAccept ? n.dropToAccept(target) : true;
+}
 
 const SEGMENT_STATEGY = {
     [CONTAINER_DIRECTION.ROW]: {
@@ -88,7 +99,7 @@ function beforeDrop(MovingNodes) {
 }
 
 async function _prepareDrop(ide, Container, point, nodePaths, direction, MovingNodes) {
-    const innerDropable = !Container ||  MovingNodes.find(n => Container.dropable(n) && n.dropToAccept(Container));
+    const innerDropable = !Container ||  MovingNodes.find(n => Container.dropable(n) && _dropToAccept(n, Container));
     const info = await ide.getElementsInfoByNodePath(nodePaths);
     let { getSegs, shiftHighlighter } = SEGMENT_STATEGY[direction];
     let minDist = Infinity
@@ -114,10 +125,10 @@ async function _prepareDrop(ide, Container, point, nodePaths, direction, MovingN
         });
     }
 
-    if(Container) {
+    if(Container && !Container.isModal) {
         const ContainerPath = Container.nodePath;
         const cParent = Container.parentNode;
-        const result = MovingNodes.find(n => cParent.dropable(n) && n.dropToAccept(cParent));
+        const result = MovingNodes.find(n => cParent.dropable(n) && _dropToAccept(n, cParent));
         if(result) {
             const cParentDirection = cParent.direction || CONTAINER_DIRECTION.AUTO;
             const { getSegs, shiftHighlighter: containerShiftHighlighter } = SEGMENT_STATEGY[cParentDirection];
@@ -164,29 +175,69 @@ const NotAllowedStrategy = {
     }
 }
 
-const EmptySlotStrategy = (ViewRoot) => ({
+const EmptySlotStrategy = (ViewRoot, MovingNodes) => ({
     dragover(ide, context, payload) {
         const elementInfo = payload.elementInfo;
-        const rect = BoxToRectangle(elementInfo.rects[0]);
-        ide.surface.highlightSeg(false);
-        ide.surface.highlightEmptySlot(true, rect);
-        ide.highlightNodeByNodePath(elementInfo.target);
-        context.nodePath = elementInfo.target;
-        ide.setCursorInFrame('copy');
+        const Container = getNodeByNodePath(elementInfo.target);
+        const dropable =  MovingNodes.find(n => Container.dropable(n) && _dropToAccept(n, Container));
+        if(!dropable) {
+            ide.surface.highlightSeg(false);
+            ide.surface.highlightEmptySlot(false);
+            ide.highlightNodeByNodePath(elementInfo.target);
+            ide.setCursorInFrame('not-allowed');
+        } else {
+            const rect = BoxToRectangle(elementInfo.rects[0]);
+            ide.surface.highlightSeg(false);
+            ide.surface.highlightEmptySlot(true, rect);
+            ide.highlightNodeByNodePath(elementInfo.target);
+            context.nodePath = elementInfo.target;
+            ide.setCursorInFrame('copy');
+        }
+      
     },
     drop(ide, context, MovingNodes, callback) {
-        const node = getNodeByNodePath(ViewRoot, context.nodePath);
+        const node = getNodeByNodePath(context.nodePath);
         if(node) {
-            beforeDrop(MovingNodes);
-            batchAddChild(node, MovingNodes);
+            if(context.outside) {
+                callback((afterNodes = []) => {
+                    batchAddChild(node, afterNodes);
+                }, node);
+            } else {
+                beforeDrop(MovingNodes);
+                batchAddChild(node, MovingNodes);
+                callback();
+            }
+            // if(MovingNodes.find(node => node.concept === 'DataSource')) {
+            //     const datasource = MovingNodes.find(node => node.concept === 'DataSource');
+            //     node.setAttribute({
+            //         name: 'dataSource',
+            //         value: resolveDataSource(datasource)   
+            //     });
+            //     genTableFromDataSource(node.source, datasource);
+                
+            // } else {
+            //     beforeDrop(MovingNodes);
+            //     batchAddChild(node, MovingNodes);
+            // }
         }
         ide.surface.highlightSeg(false);
         ide.surface.highlightEmptySlot(false)
         ide.closeHighlight();
-        callback();
+       
     }
 })
 
+function highlightContainer(ide, Container) {
+    if(Container) {
+        if(Container.isModal) {
+            ide.highlightNodeByNodePath(Container.nodePath, '[mainmodal="true"]');
+        } else {
+            ide.highlightNodeByNodePath(Container.nodePath);
+        }
+    } else {
+        ide.closeHighlight();
+    }
+}
 async function normalPreDrop(ide, Container, context, point, nodePaths, direction, MovingNodes) {
     try {
         const { nearestSeg, nodepath, loc } = await _prepareDrop(
@@ -197,25 +248,18 @@ async function normalPreDrop(ide, Container, context, point, nodePaths, directio
             direction,
             MovingNodes
         );
+        console.log(nodepath);
         
         ide.surface.highlightSeg(true, nearestSeg);
         ide.surface.highlightEmptySlot(false)
-        if(Container) {
-            ide.highlightNodeByNodePath(Container.nodePath);
-        } else {
-            ide.closeHighlight();
-        }
+        highlightContainer(ide, Container);
         context.nodePath = nodepath;
         context.loc = loc
         ide.setCursorInFrame('copy');
     } catch(err) {
         ide.surface.highlightSeg(false);
         ide.surface.highlightEmptySlot(false)
-        if(Container) {
-            ide.highlightNodeByNodePath(Container.nodePath);
-        } else {
-            ide.closeHighlight();
-        }
+        highlightContainer(ide, Container);
         context.nodePath = '';
         context.loc = ''
         ide.setCursorInFrame('not-allowed');
@@ -241,15 +285,21 @@ const ViewRootDropStrategy = (ViewRoot, Container, MovingNodes) => {
             }
         },
         drop(ide, context, MovingNodes, callback) {
-            const node = getNodeByNodePath(ViewRoot, context.nodePath);
+            const node = getNodeByNodePath(context.nodePath);
             if(node) {
-                beforeDrop(MovingNodes);
-                normalInsertNodes(node, context.loc, MovingNodes);
+                if(context.outside) {
+                    callback((afterNodes = []) => {
+                        normalInsertNodes(node, context.loc, afterNodes);
+                    }, ViewRoot)
+                } else {
+                    beforeDrop(MovingNodes);
+                    normalInsertNodes(node, context.loc, MovingNodes);
+                    callback();
+                }
             }
             ide.surface.highlightSeg(false);
             ide.surface.highlightEmptySlot(false)
             ide.closeHighlight();
-            callback();
         }
     }
     
@@ -268,15 +318,22 @@ const ContainerDropStrategy = (ViewRoot, Container, MovingNodes) => {
             }
         },
         drop(ide, context, MovingNodes, callback) {
-            const node = getNodeByNodePath(ViewRoot, context.nodePath);
+            const node = getNodeByNodePath(context.nodePath);
             if(node) {
-                beforeDrop(MovingNodes);
-                normalInsertNodes(node, context.loc, MovingNodes)
+                if(context.outside) {
+                    callback((afterNodes = []) => {
+                        normalInsertNodes(node, context.loc, afterNodes);
+                    }, node)
+                } else {
+                    beforeDrop(MovingNodes);
+                    normalInsertNodes(node, context.loc, MovingNodes);
+                    callback();
+                }
             }
             ide.surface.highlightSeg(false);
             ide.surface.highlightEmptySlot(false)
             ide.closeHighlight();
-            callback();
+           
         }
     }
 }
@@ -284,7 +341,7 @@ const ContainerDropStrategy = (ViewRoot, Container, MovingNodes) => {
 const AbsoluteDropStrategy = (ViewRoot, Container, MovingNodes) => {
     return {
         async dragover(ide, context, payload) {
-            const innerDropable = MovingNodes.find(n => Container.dropable(n) && n.dropToAccept(Container));
+            const innerDropable = MovingNodes.find(n => Container.dropable(n) && _dropToAccept(n, Container));
             if(innerDropable) {
                 context.nodePath = Container.nodePath;
                 context.toCoord = [payload.eventMeta.clientX, payload.eventMeta.clientY]
@@ -333,71 +390,101 @@ const AbsoluteDropStrategy = (ViewRoot, Container, MovingNodes) => {
             }*/
         },
         async drop(ide, context, MovingNodes, callback) {
-            const containerNode = getNodeByNodePath(ViewRoot, context.nodePath);
+            const containerNode = getNodeByNodePath(context.nodePath);
             if(containerNode) {
-                const movingNodeInfos = context.movingNodeInfos;
-                const containerInfo = await ide.getElementInfoByNodePath(context.nodePath)
-                const containerbox = containerInfo.rects[0];
-                MovingNodes.forEach(node => {
-                    if(node.parentNode === containerNode) {
-                        const deltaX = context.toCoord[0] - context.fromCoord[0];
-                        const deltaY = context.toCoord[1] - context.fromCoord[1];
-                        const info = movingNodeInfos[node.nodePath];
-                        if(info) {
-                            const box = info.rects[0];
-                            
+                if(context.outside) {
+                    callback((afterNodes = []) => {
+                        if(afterNodes[0]) {
                             const style = Object.assign({
                                 ...CSSInlineStyleToObject(node.staticStyle),
-                                left: `${box.x - containerbox.x + deltaX}px`,
-                                top: `${box.y - containerbox.y + deltaY}px`
+                                left: `${context.toCoord[0] - containerbox.x}px`,
+                                top: `${context.toCoord[1] - containerbox.y}px`
                             });
+                            const node = afterNodes[0];
                             node.staticStyle = CSSToStaticStyle(style);
-                            node.updateComponentKey();
+                            containerNode.addChild(node);       
                         }
-                        
-                    } else {
-                        removePositionStyleFromNodeInsideAbsoluteLayout(node);
-                        const style = Object.assign({
-                            ...CSSInlineStyleToObject(node.staticStyle),
-                            left: `${context.toCoord[0] - containerbox.x}px`,
-                            top: `${context.toCoord[1] - containerbox.y}px`
-                        });
-                        containerNode.addChild(node);
-                        node.staticStyle = CSSToStaticStyle(style);
-                    }
-                    ide.surface.highlightSeg(false);
-                    ide.surface.highlightEmptySlot(false);
-                    ide.closeHighlight();
-                })
-                callback();
+                    }, containerNode)
+                } else {
+                    const movingNodeInfos = context.movingNodeInfos;
+                    const containerInfo = await ide.getElementInfoByNodePath(context.nodePath)
+                    const containerbox = containerInfo.rects[0];
+                    MovingNodes.forEach(node => {
+                        if(node.parentNode === containerNode) {
+                            const deltaX = context.toCoord[0] - context.fromCoord[0];
+                            const deltaY = context.toCoord[1] - context.fromCoord[1];
+                            const info = movingNodeInfos[node.nodePath];
+                            if(info) {
+                                const box = info.rects[0];
+                                
+                                const style = Object.assign({
+                                    ...CSSInlineStyleToObject(node.staticStyle),
+                                    left: `${box.x - containerbox.x + deltaX}px`,
+                                    top: `${box.y - containerbox.y + deltaY}px`
+                                });
+                                node.staticStyle = CSSToStaticStyle(style);
+                                node.updateComponentKey();
+                            }
+                            
+                        } else {
+                            removePositionStyleFromNodeInsideAbsoluteLayout(node);
+                            const style = Object.assign({
+                                ...CSSInlineStyleToObject(node.staticStyle),
+                                left: `${context.toCoord[0] - containerbox.x}px`,
+                                top: `${context.toCoord[1] - containerbox.y}px`
+                            });
+                            containerNode.addChild(node);
+                            node.staticStyle = CSSToStaticStyle(style);
+                        }
+                    });
+                    callback();
+                }
+                ide.surface.highlightSeg(false);
+                ide.surface.highlightEmptySlot(false);
+                ide.closeHighlight();
+                
             }
         }
     }
 }
 
+function resolveContainerNode(node) {
+    if(node.isModal && node.source._cacheStatus?.open) {
+        return node
+    }
+    if(node.isContainer) {
+        return node
+    }
+    return node.parentNode;
+}
 
 export function chooseStrategy(payload, ViewRoot, MovingNodes) {
+    console.log(payload);
     if(payload.notAllowed){
         return NotAllowedStrategy;
     }
     if(payload.inFrame) {
         const elementInfo = payload.elementInfo;
         if(elementInfo?.isEmptySlot) {
-            return EmptySlotStrategy(ViewRoot);
+            return EmptySlotStrategy(ViewRoot, MovingNodes);
         }
         if(elementInfo?.target) {
-            const node = getNodeByNodePath(ViewRoot, elementInfo.target);
+            const node = getNodeByNodePath(elementInfo.target);
             if(node) {
-                const containerNode = node.isContainer ? node : node.parentNode;
+
+                const containerNode = resolveContainerNode(node)//(node.isContainer || node.isModal) ? node : node.parentNode;
                 if(containerNode.isRoot) {
                     return ViewRootDropStrategy(ViewRoot, containerNode, MovingNodes);
                 }
                 if(containerNode?.isAbsolute) {
                     return AbsoluteDropStrategy(ViewRoot, containerNode, MovingNodes);
-                }      
+                }     
                 return ContainerDropStrategy(ViewRoot, containerNode, MovingNodes);
             }
         } else {
+            if(payload.elementInfo?.outOfRestrict){
+                return NotAllowedStrategy;
+            }
             return ViewRootDropStrategy(ViewRoot);
         }
 
@@ -414,7 +501,7 @@ function AbsoluteDragStartStrategy(ViewRoot, elementInfo, eventMeta) {
         const infos = await ide.getElementsInfoByNodePath(movingNodePaths);
         context.movingNodeInfos = infos;
 
-        const dragNode = getNodeByNodePath(ViewRoot, elementInfo.target);
+        const dragNode = getNodeByNodePath(elementInfo.target);
         const Container = dragNode.parentNode;
         const payload = {
             nodePaths: [],
@@ -435,7 +522,7 @@ function AbsoluteDragStartStrategy(ViewRoot, elementInfo, eventMeta) {
 
 export function dragStartStrategy(ViewRoot, elementInfo, eventMeta) {
     if(elementInfo?.target) {
-        const node = getNodeByNodePath(ViewRoot, elementInfo.target);
+        const node = getNodeByNodePath(elementInfo.target);
         if(node) {
             const containerNode = node.parentNode;
             if(containerNode?.isAbsolute) {

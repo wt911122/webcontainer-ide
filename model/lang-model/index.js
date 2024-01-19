@@ -47,6 +47,12 @@ export class View extends BaseNode {
         return this.elements.findIndex(n => n === viewElement);
     }
 
+    toJSON() {
+        return {
+            concept: "View",
+            elements: this.elements.map(el => el.toJSON())
+        }
+    }
 }
 
 export class ViewElement extends BaseNode {
@@ -93,6 +99,25 @@ export class ViewElement extends BaseNode {
         viewElement.parentNode = this;
     }
 
+    addBindAttribute(bindAttr) {
+        this.bindAttrs.push(new BindAttribute(bindAttr))
+    }
+
+    setBindAttribute(name, value) {
+        const idx = this.bindAttrs.findIndex(attr => attr.name === name);
+        if(idx !== -1) {
+            this.bindAttrs.splice(idx, 1, value)
+        } else {
+            this.bindAttrs.push(value)
+        }
+    }
+    setBindAttributeValue(name, value) {
+        const attr = this.bindAttrs.find(attr => attr.name === name);
+        if(attr) {
+            attr.value = value;
+        }
+    }
+
     removeViewElement(viewElement) {
         const idx = this.children.findIndex(n => n === viewElement);
         if(idx!==-1){
@@ -107,6 +132,15 @@ export class ViewElement extends BaseNode {
     }
     getViewElementIdx(viewElement) {
         return this.children.findIndex(n => n === viewElement);
+    }
+
+    toJSON() {
+        return {
+            concept: "ViewElement",
+            tag: this.tag,
+            bindAttrs: this.bindAttrs.map(attr => attr.toJSON()),
+            children: this.children.map(elem => elem.toJSON())
+        }
     }
 }
 
@@ -124,7 +158,7 @@ function parseExp(exp) {
     return parseIndentifier(exp);
 }
 
-class BindAttribute extends BaseNode {
+export class BindAttribute extends BaseNode {
     name = '';
     value = '';
 
@@ -134,6 +168,15 @@ class BindAttribute extends BaseNode {
         this.value = source.value;
         if(source.expression) {
             this.value = parseExp(source.expression);
+        }
+    }
+
+    toJSON() {
+        return {
+            concept: "BindAttribute",
+            name: this.name,
+            value: this.value,
+            expression: this.expression
         }
     }
 }

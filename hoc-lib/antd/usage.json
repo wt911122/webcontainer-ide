@@ -1,0 +1,86 @@
+[
+    {
+        "symbol": "Flex",
+        "name": "线性布局",
+        "jsonSchema": {
+            "name": "Flex",
+            "title": "线性布局",
+            "isContainer": true,
+            "containerDirection": {
+                "expression": "this.getAttribute('vertical').value === true ? 'column' : 'row' "
+            },
+            "attrs": [
+                {
+                    "name": "vertical",
+                    "type": "boolean"
+                }
+            ]
+        }
+    },
+    {
+        "symbol": "Table",
+        "name": "表格",
+        "jsonSchema": {
+            "name": "Table",
+            "title": "表格",
+            "isContainer": true,
+            "useFakeDatasource": true, 
+            "customSlot": "TableSlot",
+            "childAccept": {
+                "expression": "target.tag === 'Column' || target.type === 'DataSource'"
+            },
+            "containerDirection": "row"
+        }
+    },
+    {
+        "symbol": "Column",
+        "name": "表格列",
+        "jsonSchema": {
+            "name": "Column",
+            "title": "表格列",
+            "isContainer": true,
+            "childAccept": false,
+            "noDefaultSlot": true,
+            "parentAccept": {
+                "expression": "target.tag === 'Table'"
+            },
+            "containerDirection": "row",
+            "selector": {
+                "expression": "this.getElement(target => target.slotTarget === 'title')",
+                "cssSelector": "th"
+            },
+            "slots": [
+                {
+                    "name": "title",
+                    "title": "标题",
+                    "description": "标题"
+                },
+                {
+                    "name": "render",
+                    "title": "表格",
+                    "description": "表格"
+                }
+            ]
+        }
+    }, 
+    {
+        "symbol": "Button",
+        "name": "按钮", 
+        "jsonSchema": {
+            "name": "Button",
+            "title": "按钮",
+            "isContainer": false,
+            "editable": true
+        }
+    },
+    {
+        "symbol": "Breadcrumb",
+        "name": "面包屑", 
+        "jsonSchema": {
+            "name": "Button",
+            "title": "按钮",
+            "isContainer": false,
+            "editable": true
+        }
+    }
+]

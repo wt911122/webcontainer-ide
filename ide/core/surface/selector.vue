@@ -2,16 +2,26 @@
     <div :class="$style.root" 
         :focus="isFocus">
         <template v-if="meta.active">
-            <div v-if="!meta.noTitle" :class="$style.rootTitle" @mouseover="hoverParent">
-                {{ title }}
-                <div :class="$style.parents" v-if="isFocus">
-                    <div v-for="item in parentList" key="item.key" :class="$style.parentTitleWrapper">
-                        <div :class="$style.parentTitle" :nodePath="item.source.nodePath" @click="changeFocus(item.source)">
-                            {{ item.title }}
+            <div v-if="!meta.noTitle" :class="$style.rootMenu">
+                <div :class="$style.rootTitle" @mouseover="hoverParent">
+                    {{ title }}
+                    <div :class="$style.parents" v-if="isFocus">
+                        <div v-for="item in parentList" key="item.key" :class="$style.parentTitleWrapper">
+                            <div :class="$style.parentTitle" :nodePath="item.source.nodePath" @click="changeFocus(item.source)">
+                                {{ item.title }}
+                            </div>
                         </div>
                     </div>
+                   
+                </div>
+                <div v-if="ideModel.deletable && !isModal" :class="$style.subMenuContainer">
+                    <div :class="$style.subMenuItem" @click="deleteElement">删除</div>
+                </div>
+                <div v-if="isModal" :class="$style.subMenuContainer">
+                    <div :class="$style.subMenuItem" @click="closeModal">关闭</div>
                 </div>
             </div>
+           
             <svg :style="transform" :width="width" :height="height" :viewBox="viewBox" xmlns="http://www.w3.org/2000/svg" >
                 <path
                     fill="none"
@@ -33,6 +43,12 @@ export default {
     computed: {
         strokeDash() {
             return this.isFocus ? 'none' : '4, 1'
+        },
+        isModal() {
+            return this.ideModel.isModal && this.ideModel.source._cacheStatus?.open;
+        },
+        ideModel() {
+            return this.meta.source;
         },
         parentList() {
             let source = this.meta.source;
@@ -79,7 +95,9 @@ export default {
     },
     methods: {
         hoverParent(e) {
-            console.log(e);
+            if(!this.isFocus) {
+                return;
+            }
             const elem = e.target;
             if(elem && elem.getAttribute('nodePath')) {
                 this.setHighlightNode(elem.getAttribute('nodePath'))
@@ -91,7 +109,33 @@ export default {
         },
         changeFocus(source) {
             this.setFocusNode(source);
-        } 
+        },
+        deleteElement() {
+            this.ideModel.delete();
+            const surface = this.getSurface();
+            surface.refreshIDE();
+            const ide = surface.ide;
+            ide.surface.highlightSeg(false);
+            ide.surface.highlightEmptySlot(false)
+            ide.closeHighlight();
+            ide.clearFocus();
+        },
+        closeModal() {
+            const ide = this.getSurface().ide;
+            const nodepath = this.ideModel.nodePath;
+            ide.doCallComponentMethod({
+                nodePath: nodepath,
+                method: 'close'
+            });
+            ide.doSetRestrictArea()
+            this.ideModel.source._cacheStatus = {
+                open: false,
+            }
+            ide.surface.highlightSeg(false);
+            ide.surface.highlightEmptySlot(false)
+            ide.closeHighlight();
+            ide.clearFocus();
+        }
         // close() {
         //     this.getSurface().closeHighlightElem();
         // },
@@ -119,13 +163,19 @@ export default {
 .root > svg {
     pointer-events: none
 }
-.rootTitle{
+.rootMenu{
+    display: flex;
+    flex-direction: row;
     position: absolute;
+    gap: 10px;
     transform: translateY(-100%) translateX(-1.5px);
     left: 0;
     top: 2px;
-    background-color: blue;
+}
+.rootTitle{
+    position: relative;
     color: white;
+    background-color: blue;
     line-height: 18px;
     font-size: 16px;
     width: max-content;
@@ -135,6 +185,16 @@ export default {
 }
 .rootTitle:hover .parents{
     display: block;
+}
+.subMenuItem{
+    color: white;
+    background-color: blue;
+    line-height: 16px;
+    font-size: 14px;
+    width: max-content;
+    padding: 5px;
+    cursor: pointer;
+    min-width: 80px; 
 }
 .parents {
     display: none;

@@ -10,6 +10,8 @@ const status = {
     draggingMoveElems: [],
     isEditing: false,
     edittingTarget: null,
+
+    restrictArea: null,
 }
 
 const defaultPayload = {
@@ -67,16 +69,46 @@ function pointWithinTarget(p, target) {
     const element = domtree.find(elem => elem === target);
     return !!element;
 }
-
+function doesElementContainElement(a,b) {
+    const el1Rect = a.getBoundingClientRect();
+    const el2Rect = b.getBoundingClientRect();
+    return (el1Rect.left <= el2Rect.left) && (el1Rect.right >= el2Rect.right) && (el1Rect.top <= el2Rect.top) && (el1Rect.bottom >= el2Rect.bottom);
+}
+function doesAreaContainPoint(area, x, y) {
+    return area.left < x && area.right > x && area.top < y && area.bottom > y
+}
 function lockTarget(e) {
     status.mouseCurrentLocation[0] = e.clientX;
     status.mouseCurrentLocation[1] = e.clientY;
+    if(status.restrictArea) {
+        const area = status.restrictArea();
+        if(!area || !doesAreaContainPoint(area, e.clientX, e.clientY)){
+            console.log('out of Restrict!')
+            return 'restrict';
+        }
+    }
+    
     const domtree = document.elementsFromPoint(e.clientX, e.clientY);
     const emptyslot = domtree?.[0]?.hasAttribute('emptyslot');
     if(emptyslot) {
         return domtree[0];
     }
-    const element = domtree.find(elem => elem.hasAttribute('nodepath'));
+    let element;
+    let lastElem;
+    let i = 0;
+    const l = domtree.length;
+    while(i < l) {
+        element = domtree[i];
+        lastElem = domtree[i-1];
+        if(lastElem && !doesElementContainElement(element, lastElem)) {
+            element = null;
+            break;
+        }
+        if(element.hasAttribute('nodepath')) {
+            break;
+        }
+        i++;
+    }
     
     if(element) {
         return element
@@ -179,6 +211,10 @@ function prepareElementTransferInfomation(element) {
     const payload = {
         target: null,
     };
+    if(element === 'restrict') {
+        payload.outOfRestrict = true;
+        return payload;
+    }
     if(element) {
         if(element.hasAttribute('emptyslot')) {
             let elem = element;
@@ -453,6 +489,7 @@ window.addEventListener('click', (e) => {
             elementInfo: prepareElementTransferInfomation(element),
         }
     });
+    console.log('trigger click!')
     // collectSubElements(element);
 }, CAPTURE_EVENT)
 
@@ -472,6 +509,7 @@ window.addEventListener('dblclick', (e) => {
             elementInfo: prepareElementTransferInfomation(element),
         }
     });
+    console.log('trigger dblclick!')
     // collectSubElements(element);
 }, CAPTURE_EVENT)
 
@@ -584,7 +622,8 @@ const observer = new ResizeObserver(() => {
 
 const methods = {
     getElementInfoByNodePath(payload) {
-        const elem = document.querySelector(`[nodepath="${payload.nodePath}"]`);
+        const additionalSelector = payload.selector || '';
+        const elem = document.querySelector(`[nodepath="${payload.nodePath}"]${additionalSelector}`);
         return prepareElementTransferInfomation(elem)
     },
     getElementsInfoByNodePath(payload) {
@@ -602,7 +641,6 @@ const methods = {
         payload.temporaryStyles.forEach(meta => {
             const elem = document.querySelector(`[nodepath="${meta.nodePath}"]`);
             elem.style = meta.style;
-            console.log(meta.style)
         })
     },
     setElementsTemporaryAttribute(payload) {
@@ -616,7 +654,6 @@ const methods = {
     startObserveRootNodeSize(payload) { 
         const elem = document.querySelector(payload.selector);
         if(elem) {
-            console.log(elem)
             observer.observe(elem);
         }
     },
@@ -645,7 +682,25 @@ const methods = {
             status.isEditing = true;
             status.edittingTarget = elem;
         }
-    }
+    },
+    callComponentMethod(payload) {
+        const { nodePath, method, argus = [] } = payload
+        window._ideCallComponentMethod(nodePath, method, ...argus)
+    },
+    setRestrictArea(payload) {
+        if(payload.selector) {
+            
+            status.restrictArea = () => {
+                const elem = document.querySelector(payload.selector);
+                if(elem) {
+                    return elem.getBoundingClientRect();
+                }
+                return null;
+            };
+        } else {
+            status.restrictArea = null; 
+        }
+    },
 }
 
 function selectElementContents(el) {

@@ -13,9 +13,8 @@
             :meta="highlight_empty_slot">
         </HighlightEmptySlot>
         <Wrapper 
-            v-if="highlight_elem.active"
-            :x="highlight_elem.position[0]" 
-            :y="highlight_elem.position[1]"
+            :x="highlight_elem?.position?.[0]" 
+            :y="highlight_elem?.position?.[1]"
             :active="highlight_elem.active">
             <Selector :meta="highlight_elem" :isFocus="false"></Selector>
         </Wrapper>
