@@ -1,6 +1,8 @@
+import { forwardRef } from 'react';
+
 import { Table } from 'antd';
 // import styles from './ide.module.css';
-export default function(props) {
+export default forwardRef(function(props, ref) {
     const children = props.children;
     const nodepath = props.nodepath;
     const wrapperProps = { nodepath };
@@ -12,12 +14,12 @@ export default function(props) {
 
     return (
         <div {...wrapperProps}>
-             <Table {...props}>
+             <Table ref={ref} {...props}>
                 {children}
              </Table>
         </div>
     )
-};
+});
 
 
 export { default as TableSlot } from './slot.jsx';

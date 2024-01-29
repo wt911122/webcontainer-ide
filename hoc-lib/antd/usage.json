@@ -40,7 +40,6 @@
             "title": "表格列",
             "isContainer": true,
             "childAccept": false,
-            "noDefaultSlot": true,
             "parentAccept": {
                 "expression": "target.tag === 'Table'"
             },

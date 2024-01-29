@@ -1,6 +1,6 @@
-import { forwardRef, useState, useImperativeHandle } from 'react';
-import { Modal } from 'antd';
-export { default as ModalSutando } from './sutando';
+import { forwardRef, useState, useRef, useImperativeHandle } from 'react';
+import { Select } from 'antd';
+export const SelectOption = Select.Option;
 export default forwardRef(function(props, ref) {
     // const children = props.children;
     const nodepath = props.nodepath;
@@ -10,6 +10,7 @@ export default forwardRef(function(props, ref) {
             wrapperProps[key] = props[key];
         }
     });
+    const selectRef = useRef(null);
 
     const [open, setOpen] = useState(props.open);
     useImperativeHandle(ref, () => {
@@ -22,12 +23,10 @@ export default forwardRef(function(props, ref) {
             }
         };
     }, []);
-    const title = props.title();
-    const footer = props.footer();
     return (
-        <Modal ref={ref} {...props} title={title} footer={footer} open={open}>
+        <Select ref={selectRef} {...props} open={open}>
             {props.children}
-        </Modal>
+        </Select>
     )
 });
-// export default Modal;
+
